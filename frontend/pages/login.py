@@ -1,6 +1,3 @@
-"""
-Login Page
-"""
 import streamlit as st
 from pathlib import Path
 from utils.api_client import login_teacher
