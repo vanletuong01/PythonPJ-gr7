@@ -11,6 +11,7 @@ if css_path.exists():
 # Cấu hình trang
 st.set_page_config(
     page_title="Đăng ký - VAA",
+    page_icon="✈️",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -54,24 +55,24 @@ with col2:
         password = st.text_input("Password", type="password", placeholder="••••••••")
         name = st.text_input("Full Name", placeholder="Enter your name")
 
-    submit = st.form_submit_button("Register")
+        submit = st.form_submit_button("Register")
 
-    if submit:
-        if not email or not password or not name:
-            st.error("Please fill in all required fields")
-        else:
-            result = register_teacher(email=email, password=password, name=name, phone=phone)
-            if result.get("success"):
-                st.success("Đăng ký thành công! Đang chuyển hướng đến trang đăng nhập...")
-                st.balloons()
-                import time
-                time.sleep(2)
-                st.switch_page("pages/login.py")
+        if submit:
+            if not email or not password or not name:
+                st.error("Vui lòng điền tất cả các trường.")
             else:
-                st.error(result.get("message", "Registration failed"))
+                result = register_teacher(email=email, password=password, name=name)
+                if result.get("success"):
+                    st.success("Đăng ký thành công! Đang chuyển hướng đến trang đăng nhập...")
+                    st.balloons()
+                    import time
+                    time.sleep(2)
+                    st.switch_page("pages/login.py")
+                else:
+                    st.error(result.get("message", "Đã có lỗi xảy ra trong quá trình đăng ký."))
 
     col_link1, col_link2, col_link3 = st.columns([1, 2, 1])
     with col_link2:
         st.markdown('<div style="text-align: center; margin-top: 20px; font-size: 13px; color: #666;">Have an account?</div>', unsafe_allow_html=True)
         if st.button("Login", key="go_to_login", use_container_width=True):
-            st.switch_page("pages/login.py")
+            st.switch_page("pages/login.py") 

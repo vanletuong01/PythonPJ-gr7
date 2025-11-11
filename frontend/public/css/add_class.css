@@ -1,0 +1,42 @@
+.add-class-form {
+        background: #f7f7f7;
+        border-radius: 8px;
+        padding: 32px 24px 24px 24px;
+        margin-top: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    .add-class-form label {
+        font-weight: 500;
+        margin-bottom: 4px;
+    }
+    .add-class-form .row-flex {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+    .add-class-form .row-flex > div {
+        flex: 1;
+    }
+    .add-class-form .save-btn {
+        width: 100%;
+        font-size: 18px;
+        font-weight: bold;
+        margin-top: 18px;
+        background: #888;
+        color: #fff;
+        border-radius: 6px;
+        border: none;
+        padding: 10px 0;
+    }
+    .add-class-form .note {
+        text-align: right;
+        font-size: 13px;
+        margin-top: 10px;
+    }
+    .add-class-form .note span {
+        color: #e74c3c;
+        font-weight: 500;
+    }

@@ -7,6 +7,7 @@ SECRET_KEY = "your-secret-key"
 ALGORITHM = "HS256"
 
 def hash_password(password: str) -> str:
+    print("HASH PASSWORD INPUT:", repr(password), type(password), len(password) if password else "None")
     return pwd_context.hash(password)
 
 def verify_password(plain_password, hashed_password):

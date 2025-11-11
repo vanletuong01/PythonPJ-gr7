@@ -7,10 +7,14 @@ from backend.app.database import get_db
 
 router = APIRouter()
 
+from fastapi import HTTPException
+
 @router.post("/register", response_model=LoginOut)
 def register(login: LoginCreate, db: Session = Depends(get_db)):
+    if not login.email.endswith("@vaa.edu.vn"):
+        raise HTTPException(status_code=400, detail="Email phải có tên miền @vaa.edu.vn")
     if get_login_by_email(db, login.email):
-        raise HTTPException(status_code=400, detail="Email already registered")
+        raise HTTPException(status_code=400, detail="Email đã được đăng ký")
     return create_login(db, login)
 
 @router.post("/login")

@@ -7,6 +7,7 @@ def get_login_by_email(db: Session, email: str):
     return db.query(Login).filter(Login.email == email).first()
 
 def create_login(db: Session, login: LoginCreate):
+    print("DEBUG PASSWORD:", repr(login.password), type(login.password), len(login.password) if login.password else "None")
     db_login = Login(
         email=login.email,
         phone=login.phone,

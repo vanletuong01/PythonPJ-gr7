@@ -4,7 +4,7 @@ class LoginCreate(BaseModel):
     email: str
     phone: str = None
     name: str
-    password: str  
+    password: str
 
 class LoginOut(BaseModel):
     id_login: int
@@ -13,7 +13,7 @@ class LoginOut(BaseModel):
     name: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class LoginIn(BaseModel):
     email: str

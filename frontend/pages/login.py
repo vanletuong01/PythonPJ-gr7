@@ -5,6 +5,7 @@ from services.api_client import login_teacher
 # Cấu hình trang
 st.set_page_config(
     page_title="Đăng nhập - VAA",
+    page_icon="✈️",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -52,12 +53,15 @@ with col2:
         submit = st.form_submit_button("Log in")
     if submit:
         if not email or not password:
-            st.error("Please fill in all fields")
+            st.error("Vui lòng điền đầy đủ thông tin.")
         else:
             result = login_teacher(email, password)
             if result.get("success"):
-                # Lưu token, chuyển trang, v.v.
+                st.session_state.logged_in = True
+                st.session_state.teacher = result["user"]  # Lưu thông tin giáo viên vào session
                 st.success("Đăng nhập thành công!")
+                st.balloons()
+                st.switch_page("app.py")
             else:
                 st.error(result.get("message", "Đăng nhập thất bại"))
     
