@@ -1,18 +1,20 @@
 from pydantic import BaseModel
 
-class TeacherCreate(BaseModel):
-    username: str
-    password: str
-    full_name: str
+class LoginCreate(BaseModel):
+    email: str
+    phone: str = None
+    name: str
+    password: str  
 
-class TeacherLogin(BaseModel):
-    username: str
-    password: str
-
-class TeacherOut(BaseModel):
-    id: int
-    username: str
-    full_name: str
+class LoginOut(BaseModel):
+    id_login: int
+    email: str
+    phone: str = None
+    name: str
 
     class Config:
         orm_mode = True
+
+class LoginIn(BaseModel):
+    email: str
+    password: str

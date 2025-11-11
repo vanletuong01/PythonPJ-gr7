@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, ForeignKey
+from sqlalchemy import Column, Integer, String, Date
 from backend.app.database import Base
 
 class Student(Base):
@@ -13,6 +13,5 @@ class Student(Base):
     CitizenID = Column(String(20))
     PhotoStatus = Column(String(10))
     StudentPhoto = Column(String(255))
-    MajorID = Column(Integer, ForeignKey("major.MajorID"), nullable=False)
-    TypeID = Column(Integer, ForeignKey("type.TypeID"), nullable=False)
-    
+    MajorID = Column(Integer, nullable=False)
+    TypeID = Column(Integer, nullable=False)

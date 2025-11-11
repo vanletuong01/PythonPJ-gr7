@@ -1,13 +1,12 @@
-"""
-Register Page
-"""
 import streamlit as st
 from pathlib import Path
-from utils.api_client import register_teacher
-from utils.auth_manager import init_auth_state
+from services.api_client import register_teacher
 
-# Khởi tạo auth state
-init_auth_state()
+# Load CSS
+css_path = Path(__file__).parent.parent / "public" / "css" / "register.css"
+if css_path.exists():
+    with open(css_path, "r", encoding="utf-8") as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # Cấu hình trang
 st.set_page_config(
@@ -15,132 +14,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
-
-# CSS cho trang register
-st.markdown("""
-    <style>
-    /* Hide default streamlit elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* Hide sidebar completely with all navigation */
-    [data-testid="stSidebar"] {
-        display: none !important;
-    }
-    
-    section[data-testid="stSidebar"] {
-        display: none !important;
-    }
-    
-    [data-testid="stSidebarNav"] {
-        display: none !important;
-    }
-    
-    nav {
-        display: none !important;
-    }
-    
-    .css-1d391kg {
-        display: none !important;
-    }
-    
-    .main {
-        padding: 0 !important;
-        background: white;
-    }
-    
-    .block-container {
-        padding: 2rem 1rem !important;
-        max-width: 100% !important;
-    }
-    
-    /* Register container */
-    .register-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        gap: 50px;
-    }
-    
-    .register-left {
-        flex: 1;
-        text-align: center;
-    }
-    
-    .register-right {
-        flex: 1;
-        max-width: 400px;
-    }
-    
-    .register-illustration {
-        max-width: 100%;
-        height: auto;
-    }
-    
-    .logo-register {
-        width: 120px;
-        margin-bottom: 20px;
-    }
-    
-    .register-title {
-        font-size: 28px;
-        font-weight: 700;
-        color: #333;
-        margin-bottom: 10px;
-    }
-    
-    .register-subtitle {
-        font-size: 14px;
-        color: #888;
-        margin-bottom: 30px;
-    }
-    
-    /* Form styling */
-    .stTextInput > label {
-        font-size: 14px;
-        color: #333;
-        font-weight: 500;
-    }
-    
-    .stTextInput > div > div > input {
-        border-radius: 8px;
-        border: 1px solid #ddd;
-        padding: 12px;
-        font-size: 14px;
-    }
-    
-    .stButton > button {
-        width: 100%;
-        background: #000;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 14px;
-        font-weight: 600;
-        font-size: 15px;
-        margin-top: 10px;
-    }
-    
-    .stButton > button:hover {
-        background: #333;
-    }
-    
-    .login-link {
-        text-align: center;
-        margin-top: 20px;
-        font-size: 13px;
-        color: #666;
-    }
-    
-    .login-link a {
-        color: #667eea;
-        text-decoration: none;
-        font-weight: 600;
-    }
-    </style>
-""", unsafe_allow_html=True)
 
 # Layout: Left (Illustration) | Right (Form)
 col1, col2 = st.columns([1, 1])
@@ -153,7 +26,7 @@ with col1:
     else:
         st.markdown("""
             <div style="text-align: center; padding: 100px 50px;">
-                <h1 style="color: #667eea; font-size: 48px;">🔐</h1>
+                <h1 style="color: #667eea; font-size: 48px;"></h1>
                 <h2 style="color: #333;">LOGIN ACCESS</h2>
                 <p style="color: #888;">Secure registration portal</p>
             </div>
@@ -177,41 +50,26 @@ with col2:
     
     # Register form
     with st.form("register_form"):
-        email = st.text_input("Email", placeholder="Enter your email", label_visibility="visible")
-        password = st.text_input("Password", type="password", placeholder="••••••••", label_visibility="visible")
-        
-        submit = st.form_submit_button("Register")
-        
-        if submit:
-            if not email or not password:
-                st.error("Please fill in all fields")
+        email = st.text_input("Email", placeholder="Enter your email")
+        password = st.text_input("Password", type="password", placeholder="••••••••")
+        name = st.text_input("Full Name", placeholder="Enter your name")
+
+    submit = st.form_submit_button("Register")
+
+    if submit:
+        if not email or not password or not name:
+            st.error("Please fill in all required fields")
+        else:
+            result = register_teacher(email=email, password=password, name=name, phone=phone)
+            if result.get("success"):
+                st.success("Đăng ký thành công! Đang chuyển hướng đến trang đăng nhập...")
+                st.balloons()
+                import time
+                time.sleep(2)
+                st.switch_page("pages/login.py")
             else:
-                try:
-                    st.info(f"Đang đăng ký với email: {email}")
-                    result = register_teacher(
-                        name=email.split('@')[0],  # Tạm dùng email prefix làm name
-                        email=email,
-                        password=password,
-                        phone=""  # Có thể thêm field phone nếu cần
-                    )
-                    
-                    st.info(f"Response từ API: {result}")  # Debug log
-                    
-                    if result and result.get('success'):
-                        st.success("Registration successful! Redirecting to login...")
-                        st.balloons()
-                        # Redirect to login page
-                        import time
-                        time.sleep(2)
-                        st.switch_page("pages/login.py")
-                    else:
-                        st.error(f"Lỗi: {result.get('message', 'Registration failed')}")
-                except Exception as e:
-                    st.error(f"Connection error: {str(e)}")
-                    import traceback
-                    st.code(traceback.format_exc())
-    
-    # Login link - button instead of HTML link
+                st.error(result.get("message", "Registration failed"))
+
     col_link1, col_link2, col_link3 = st.columns([1, 2, 1])
     with col_link2:
         st.markdown('<div style="text-align: center; margin-top: 20px; font-size: 13px; color: #666;">Have an account?</div>', unsafe_allow_html=True)
