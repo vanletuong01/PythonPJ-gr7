@@ -1,14 +1,24 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
-from backend.app.schemas.class_schemas import ClassCreate, ClassOut
-from backend.app.crud.class_crud import create_class, get_all_majors, get_all_types, get_all_shifts
 from backend.app.database import get_db
+from backend.app.crud.class_crud import create_class as crud_create_class, get_all_majors, get_all_types, get_all_shifts
 
 router = APIRouter()
 
-@router.post("/create", response_model=ClassOut)
-def api_create_class(class_in: ClassCreate, db: Session = Depends(get_db)):
-    return create_class(db, class_in)
+@router.post("/create")
+async def api_create_class(request: Request, db: Session = Depends(get_db)):
+    try:
+        payload = await request.json()
+        # debug log
+        print("DEBUG payload:", payload)
+        created = crud_create_class(db, payload)
+        return {"status": "ok", "id": created}
+    except Exception as e:
+        # print traceback to uvicorn log for debugging
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/majors")
 def api_get_majors(db: Session = Depends(get_db)):

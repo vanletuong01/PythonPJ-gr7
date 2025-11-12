@@ -3,25 +3,28 @@ from sqlalchemy import text
 from backend.app.models.class_model import Class
 from backend.app.schemas.class_schemas import ClassCreate
 
-def create_class(db: Session, class_in: ClassCreate):
-    db_class = Class(
-        Quantity=class_in.quantity,
-        Rank=class_in.rank,
-        Semester=class_in.semester,
-        DateStart=class_in.date_start,
-        DateEnd=class_in.date_end,
-        Session=class_in.session,
-        ClassName=class_in.class_name,
-        FullClassName=class_in.full_class_name,
-        Teacher_class=class_in.teacher_class,
-        TypeID=class_in.type_id,
-        MajorID=class_in.major_id,
-        ShiftID=class_in.shift_id
+def create_class(db: Session, payload):
+    # payload: dict từ frontend
+    classname = payload.get("class_name") or payload.get("ClassName") or ""
+    full = payload.get("full_class_name") or payload.get("FullClassName") or ""
+    quantity = payload.get("quantity") or 0
+    new = Class(
+        Quantity=int(quantity),
+        Semester=payload.get("semester",""),
+        DateStart=payload.get("date_start"),
+        DateEnd=payload.get("date_end"),
+        Session=payload.get("session"),
+        ClassName=classname,
+        FullClassName=full,
+        Teacher_class=payload.get("teacher_class"),
+        TypeID=payload.get("type_id"),
+        MajorID=payload.get("major_id"),
+        ShiftID=payload.get("shift_id")
     )
-    db.add(db_class)
+    db.add(new)
     db.commit()
-    db.refresh(db_class)
-    return db_class
+    db.refresh(new)
+    return new
 def get_all_majors(db: Session):
     rows = db.execute(text("SELECT MajorID, MajorName FROM major")).fetchall()
     return [{"MajorID": row[0], "MajorName": row[1]} for row in rows]

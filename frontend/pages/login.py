@@ -20,7 +20,7 @@ with col1:
     # Illustration
     illustration_path = Path(__file__).parent.parent / "public" / "images" / "illustration.png"
     if illustration_path.exists():
-        st.image(str(illustration_path), use_column_width=True)
+        st.image(str(illustration_path), use_container_width=True)
     else:
         st.markdown("""
             <div style="text-align: center; padding: 100px 50px;">
