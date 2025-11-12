@@ -18,34 +18,10 @@ Server-side inference - mọi xử lý đều ở server
 Client chỉ upload ảnh qua API, không truy cập trực tiếp DB/filesystem   
 Lưu embeddings trong MySQL (dạng BLOB)  
 
-## 🚀 Hướng dẫn cài đặt
-
-### 1. Cài đặt Python
-- Yêu cầu: Python 3.8 trở lên
-- Download tại: https://www.python.org/downloads/
-
-### 2. Cài đặt XAMPP
-- Download XAMPP: https://www.apachefriends.org/
-- Khởi động Apache và MySQL trong XAMPP Control Panel
-
-### 3. Clone/Download dự án
-```bash
-cd d:\PythonPJ
-```
-
-### 4. Cài đặt dependencies
+### Cài đặt dependencies
 ```bash
 pip install -r requirements.txt
 ```
-
-### 5. Khởi tạo database
-```bash
-python backend/database.py
-```
-
-Lệnh này sẽ tạo:
-- Database: `attendance_system`
-- Bảng: `students`, `face_embeddings`, `attendance`
 
 ## 🎯 Chạy ứng dụng
 
@@ -54,11 +30,14 @@ Lệnh này sẽ tạo:
 Mở terminal/cmd thứ nhất:
 
 ```bash
-cd d:\PythonPJ\backend\app
-python main.py
-```
+# Kích hoạt virtualenv nếu chưa
+& D:/PythonPJ/.venv/Scripts/Activate.ps1
 
-Backend sẽ chạy tại: http://localhost:8000
+# Vào thư mục project nếu cần
+cd D:\PythonPJ\PythonPJ
+
+# Chạy backend (sửa lại đường dẫn nếu cần)
+python -m uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
 
 Kiểm tra API: http://localhost:8000/docs (Swagger UI)
 
@@ -67,10 +46,15 @@ Kiểm tra API: http://localhost:8000/docs (Swagger UI)
 Mở terminal/cmd thứ hai:
 
 ```bash
-cd d:\PythonPJ\frontend
-streamlit run app.py
-```
+# Kích hoạt virtualenv nếu chưa
+& D:/PythonPJ/.venv/Scripts/Activate.ps1
 
+# Vào thư mục frontend
+cd D:\PythonPJ\PythonPJ
+
+# Chạy Streamlit app
+python -m streamlit run frontend/app.py
+```
 Frontend sẽ mở tự động tại: http://localhost:8501
 
 ## Hướng dẫn sử dụng

@@ -12,13 +12,11 @@ async def api_create_class(request: Request, db: Session = Depends(get_db)):
         # debug log
         print("DEBUG payload:", payload)
         created = crud_create_class(db, payload)
-        return {"status": "ok", "id": created}
+        return {"status": "ok", "id": created.ClassID}
     except Exception as e:
-        # print traceback to uvicorn log for debugging
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/majors")
 def api_get_majors(db: Session = Depends(get_db)):

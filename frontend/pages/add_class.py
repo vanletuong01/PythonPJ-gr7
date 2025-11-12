@@ -1,90 +1,125 @@
 import streamlit as st
 from pathlib import Path
+import datetime
 from services.api_client import get_majors, get_types, get_shifts, create_class
 
-# Cấu hình trang
 st.set_page_config(page_title="THÊM LỚP HỌC", layout="wide")
 
-# Load css
+# Load CSS
 add_class_css_path = Path(__file__).parent.parent / "public" / "css" / "add_class.css"
 if add_class_css_path.exists():
     with open(add_class_css_path, "r", encoding="utf-8") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-st.markdown("<h2>THÊM LỚP HỌC</h2>", unsafe_allow_html=True)
-st.markdown('<div class="note">Bạn đã có lớp của mình? <span>Tại đây</span></div>', unsafe_allow_html=True)
-
-# Lấy dữ liệu từ backend
-majors = get_majors()
-types = get_types()
-shifts = get_shifts()
+majors = get_majors() or []
+types = get_types() or []
+shifts = get_shifts() or []
 
 major_options = {str(m['MajorID']): m['MajorName'] for m in majors}
 type_options = {str(t['TypeID']): t['TypeName'] for t in types}
 shift_options = {str(s['ShiftID']): s['ShiftName'] for s in shifts}
 
-# --- CHỈ NHỮNG TRƯỜNG TẠO MÃ (đặt ngoài form để cập nhật ngay) ---
-col1, col2, col3 = st.columns([2,2,1])
-with col1:
-    selected_major = st.selectbox("Chọn chuyên ngành", options=list(major_options.keys()),
-                                  format_func=lambda x: major_options[x] if x in major_options else "", key="major")
-with col2:
-    selected_type = st.selectbox("Chọn loại", options=list(type_options.keys()),
-                                 format_func=lambda x: type_options[x] if x in type_options else "", key="type")
-with col3:
-    year = st.text_input("Năm", max_chars=4, key="year")
+col_left, col_right = st.columns([1.2, 2])
 
-col4, col5, col6 = st.columns([1,2,1])
-with col5:
-    class_code = st.text_input("Mã học phần", max_chars=20, key="class_code")
-with col6:
-    quantity = st.number_input("Sĩ số", min_value=1, max_value=999, step=1, key="quantity")
+with col_left:
+    avatar_path = Path(__file__).parent.parent / "public" / "images" / "avatar.png"
+    if avatar_path.exists():
+        st.image(str(avatar_path), width=60)
+    else:
+        st.markdown('<div style="height:60px"></div>', unsafe_allow_html=True)
 
-# Tạo mã lớp (mã rút gọn) và hiển thị TRỰC TIẾP trong ô "Mã lớp"
-if year and class_code and selected_major:
-    short_code_val = f"{year[-2:]}{major_options[selected_major][:2].upper()}{class_code[-2:]}"
-else:
-    short_code_val = ""
+    teacher_name = st.session_state.get("teacher", {}).get("name", "Tên giáo viên")
+    st.markdown(f"""
+        <div style="font-weight:600; font-size:18px; margin-top:10px;">{teacher_name}</div>
+    """, unsafe_allow_html=True)
 
-colA, colB = st.columns([1,3])
-with colA:
-    st.text_input("Mã lớp", value=short_code_val, max_chars=10, key="short_code", disabled=True)
-with colB:
-    st.write("")  # placeholder to giữ layout
+    logo_path = Path(__file__).parent.parent / "public" / "images" / "logo.png"
+    if logo_path.exists():
+        st.image(str(logo_path), width=180)
 
-# Các trường còn lại có thể để trong form để group lại và validate trước khi gửi
-with st.form("add_class_form"):
-    teacher_name = st.text_input("Nhập tên giảng viên", key="teacher_name")
-    semester = st.selectbox("Học kỳ", options=["Học kỳ 1", "Học kỳ 2", "Học kỳ 3"], key="semester")
-    date_start = st.date_input("Start", key="date_start")
-    date_end = st.date_input("End", key="date_end")
-    weekday = st.text_input("Thứ học", key="weekday", disabled=True)
-    selected_shift = st.selectbox("Ca học", options=list(shift_options.keys()),
-                                  format_func=lambda x: shift_options[x] if x in shift_options else "", key="shift")
-    subject_name = st.text_input("Nhập tên môn học", key="subject_name")
+    st.markdown("""
+        <div style="font-size:22px; font-weight:700; margin-top:10px;">VIETNAM AVIATION ACADEMY</div>
+        <div style="font-size:18px; font-weight:500; margin-bottom:20px;">Học Viện Hàng Không Việt Nam</div>
+    """, unsafe_allow_html=True)
 
-    submitted = st.form_submit_button("SAVE")
-    if submitted:
-        # validate
-        if not (year and class_code and selected_major and teacher_name and subject_name):
-            st.error("Vui lòng nhập đầy đủ thông tin bắt buộc!")
+    st.markdown("""
+        <div style="font-size:13px; color:#888; margin-top:40px;">
+            Trang điểm danh sinh viên
+        </div>
+    """, unsafe_allow_html=True)
+
+with col_right:
+    st.markdown("<h2 style='margin-bottom:0;'>← THÊM LỚP HỌC</h2>", unsafe_allow_html=True)
+
+    col_major, col_type, col_year = st.columns([2,2,1])
+    with col_major:
+        selected_major = st.selectbox("Chọn chuyên ngành", options=list(major_options.keys()),
+                                      format_func=lambda x: major_options[x] if x in major_options else "")
+    with col_type:
+        selected_type = st.selectbox("Chọn loại", options=list(type_options.keys()),
+                                     format_func=lambda x: type_options[x] if x in type_options else "")
+    with col_year:
+        year = st.text_input("Năm", max_chars=4)
+
+    col_code, col_class, col_quantity = st.columns([2,3,1])
+    with col_code:
+        major_code = st.text_input("___", "")
+    with col_class:
+        class_code = st.text_input("Mã học phần:", "")
+    with col_quantity:
+        quantity = st.text_input("Sĩ số:", "")
+
+    def generate_short_class_name(year, major_code, class_code):
+        return f"{year[-2:]}{major_code}{class_code[-2:]}" if year and major_code and class_code else ""
+    shortcode = generate_short_class_name(year, major_code, class_code)
+    st.text_input("Shortcode lớp học:", value=shortcode, disabled=True)
+
+    teacher = st.text_input("Nhập tên giảng viên:", "")
+    semester = st.selectbox("Học kỳ", ["Học kỳ 1", "Học kỳ 2", "Học kỳ 3"], index=0)
+
+    col_start, col_end, col_weekday = st.columns([2,2,1])
+    with col_start:
+        date_start = st.date_input("Start:")
+    with col_end:
+        date_end = st.date_input("End:")
+    with col_weekday:
+        weekday_num = date_start.weekday()
+        weekday_vn = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"]
+        weekday_str = weekday_vn[weekday_num]
+        st.text_input("Thứ học:", weekday_str, disabled=True)
+
+    shift = st.selectbox("Ca học", options=list(shift_options.keys()),
+                         format_func=lambda x: shift_options[x] if x in shift_options else "")
+    subject = st.text_input("Nhập tên môn học:")
+
+    st.markdown('<div style="height:16px"></div>', unsafe_allow_html=True)
+    save_btn = st.button("SAVE")
+
+    if save_btn:
+        data = {
+            "major": major_options.get(selected_major, ""),
+            "type": type_options.get(selected_type, ""),
+            "year": year,
+            "major_code": major_code,
+            "class_code": class_code,
+            "quantity": quantity,
+            "teacher_class": teacher,
+            "semester": semester,
+            "date_start": str(date_start),
+            "date_end": str(date_end),
+            "weekday": weekday_str,
+            "shift": shift_options.get(shift, ""),
+            "class_name": shortcode,
+            "full_class_name": f"{year}-{major_code}-{class_code}",
+            "subject": subject
+        }
+        resp = create_class(data)
+        if resp and getattr(resp, "status_code", None) == 200:
+            st.success("Tạo lớp học thành công!")
         else:
-            payload = {
-                "class_name": short_code_val,        # classname trong DB
-                "full_class_name": class_code,      # mã học phần
-                "quantity": int(quantity),
-                "semester": semester,
-                "date_start": str(date_start),
-                "date_end": str(date_end),
-                "session": weekday,
-                "teacher_class": teacher_name,
-                "type_id": int(selected_type),
-                "major_id": int(selected_major),
-                "shift_id": int(selected_shift),
-                "subject_name": subject_name
-            }
-            resp = create_class(payload)
-            if resp is not None and resp.status_code in (200, 201):
-                st.success("Lưu lớp học thành công!")
-            else:
-                st.error(f"Lưu lớp thất bại: {getattr(resp, 'text', 'No response')}")
+            st.error("Tạo lớp học thất bại!")
+
+    st.markdown(
+        '<div class="note" style="margin-top:24px;">Bạn đã có lớp của mình? <span style="color:#e74c3c;">Tại đây</span></div>',
+        unsafe_allow_html=True
+    )

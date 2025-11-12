@@ -1,10 +1,9 @@
 from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta
+from backend.config import SECRET_KEY, ALGORITHM
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = "your-secret-key"
-ALGORITHM = "HS256"
 
 def hash_password(password: str) -> str:
     print("HASH PASSWORD INPUT:", repr(password), type(password), len(password) if password else "None")

@@ -55,8 +55,9 @@ def render_auth_sidebar():
             
             st.markdown("<div style='margin: 15px 0;'></div>", unsafe_allow_html=True)
             
-            if st.button("Đăng xuất", key="logout_btn", use_container_width=True):
-                st.success("Đã đăng xuất")
+            if st.button("Đăng xuất"):
+                st.session_state.logged_in = False
+                st.session_state.teacher = {}
                 st.rerun()
         else:
             # Dòng chào mừng khi chưa đăng nhập

@@ -2,7 +2,24 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from backend.app.models.class_model import Class
 from backend.app.schemas.class_schemas import ClassCreate
-
+import datetime
+def get_weekday(date_str):
+    # date_str: 'YYYY-MM-DD'
+    try:
+        date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+        weekday_map = {
+            0: "Thứ 2",
+            1: "Thứ 3",
+            2: "Thứ 4",
+            3: "Thứ 5",
+            4: "Thứ 6",
+            5: "Thứ 7",
+            6: "Chủ nhật"
+        }
+        return weekday_map[date_obj.weekday()]
+    except Exception:
+        return None
+    
 def create_class(db: Session, payload):
     # payload: dict từ frontend
     classname = payload.get("class_name") or payload.get("ClassName") or ""
