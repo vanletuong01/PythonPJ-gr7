@@ -1,0 +1,47 @@
+# Gitignore cho dự án Python
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment variables
+.env
+
+# Uploaded files
+uploads/student_images/*
+uploads/attendance_images/*
+!uploads/student_images/.gitkeep
+!uploads/attendance_images/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Backup files
+*_old.py
+*.bak
+
+# Streamlit
+.streamlit/
