@@ -5,9 +5,9 @@ from fastapi import APIRouter, File, UploadFile, Form, HTTPException
 from fastapi.responses import JSONResponse
 from typing import Optional
 
-from db import Database
-from utils.face_recognition import FaceRecognition
-from services.student_service import StudentService
+from backend.db.database import Database
+from backend.utils.face_recognition import FaceRecognition
+from backend.services.student_service import StudentService
 
 # Khởi tạo router
 router = APIRouter(

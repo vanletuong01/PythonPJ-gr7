@@ -5,8 +5,8 @@ from fastapi import APIRouter, HTTPException, Form, Header
 from fastapi.responses import JSONResponse
 from typing import Optional
 
-from db import Database
-from services.auth_service import AuthService
+from backend.db.database import Database
+from backend.services.auth_service import AuthService
 
 # Khởi tạo router
 router = APIRouter(

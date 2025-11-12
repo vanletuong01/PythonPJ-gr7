@@ -6,9 +6,9 @@ import os
 import uuid
 from fastapi import UploadFile, HTTPException
 
-from db import Database
-from utils.face_recognition import FaceRecognition
-from db.config import STUDENT_IMAGES_DIR
+from backend.db.database import Database
+from backend.utils.face_recognition import FaceRecognition
+from backend.db.config import STUDENT_IMAGES_DIR
 
 
 class StudentService:

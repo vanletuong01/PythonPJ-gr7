@@ -7,27 +7,27 @@ import os
 from datetime import datetime
 
 # Core infrastructure
-from core.config import settings
-from core.logger import get_logger
-from core.exceptions import (
+from backend.core.config import settings
+from backend.core.logger import get_logger
+from backend.core.exceptions import (
     ValidationException,
     NotFoundException,
     DatabaseException
 )
 
 # Schemas for validation
-from app.schemas import (
+from backend.app.schemas import (
     FaceCheckResponse,
     SuccessResponse
 )
 
 # Database & Services
 # IMPORT CHÍNH XÁC: mỗi repo nằm trong file tương ứng
-from db.repositories.student_repo import StudentRepository
-from db.repositories.embeddings_repo import EmbeddingRepository
-from db.repositories.attendent_repo import AttendanceRepository
+from backend.db.repositories.student_repo import StudentRepository
+from backend.db.repositories.embeddings_repo import EmbeddingRepository
+from backend.db.repositories.attendent_repo import AttendanceRepository
 
-from services.embedding_service import EmbeddingService
+from backend.services.embedding_service import EmbeddingService
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/api/face", tags=["Face Recognition"])

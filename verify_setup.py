@@ -258,7 +258,7 @@ def check_health_routes():
     print("\n❤️  Checking health routes...")
     
     try:
-        from backend.api.health_routes import router
+        from app.api.health_routes import router
         
         endpoints = []
         for route in router.routes:

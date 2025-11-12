@@ -1,20 +1,18 @@
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-import sys
 
 # Core infrastructure
 from backend.core.config import settings
 from backend.core.logger import setup_logging, get_logger
-from backend.core.exceptions import AppException, setup_exception_handlers
+from backend.core.exceptions import setup_exception_handlers
 
 from backend.db import Database
 from backend.db.config import API_HOST, API_PORT
 
-from backend.api.auth_routes import router as auth_router
-from backend.api.face_routes import router as face_router
-from backend.api.health_routes import router as health_router
+from app.api.auth_routes import router as auth_router
+from app.api.face_routes import router as face_router
+from app.api.health_routes import router as health_router
 
 # Setup logging trước hết
 setup_logging(

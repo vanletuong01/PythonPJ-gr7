@@ -1,6 +1,8 @@
 # backend/db/student_repository.py
 from backend.db.database import get_connection
 
+# NOTE: table name is `student` in DB schema (StudentID, StudentCode, FullName, ...).
+
 class StudentRepository:
     """Xử lý truy vấn liên quan đến bảng student."""
 

@@ -5,10 +5,10 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import JSONResponse
 from datetime import date
 
-from db import Database
-from services.student_service import StudentService
-from services.attendance_service import AttendanceService
-from utils.face_recognition import FaceRecognition
+from backend.db.database import Database
+from backend.services.student_service import StudentService
+from backend.services.attendance_service import AttendanceService
+from backend.utils.face_recognition import FaceRecognition
 
 # Khởi tạo router
 router = APIRouter(
