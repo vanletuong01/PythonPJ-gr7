@@ -1,15 +1,11 @@
 import streamlit as st
 from pathlib import Path
-from utils.api_client import login_teacher
-from utils.auth_manager import save_auth_state, init_auth_state
-import sys
-
-# Khởi tạo auth state
-init_auth_state()
+from services.api_client import login_teacher
 
 # Cấu hình trang
 st.set_page_config(
     page_title="Đăng nhập - VAA",
+    page_icon="✈️",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -52,27 +48,22 @@ with col2:
     
     # Login form
     with st.form("login_form"):
-        email = st.text_input("Email", placeholder="Enter your email", label_visibility="visible")
-        password = st.text_input("Password", type="password", placeholder="••••••••", label_visibility="visible")
-        
+        email = st.text_input("Email", placeholder="Enter your email")
+        password = st.text_input("Password", type="password", placeholder="••••••••")
         submit = st.form_submit_button("Log in")
-        
-        if submit:
-            if not email or not password:
-                st.error("Please fill in all fields")
+    if submit:
+        if not email or not password:
+            st.error("Vui lòng điền đầy đủ thông tin.")
+        else:
+            result = login_teacher(email, password)
+            if result.get("success"):
+                st.session_state.logged_in = True
+                st.session_state.teacher = result["user"]  # Lưu thông tin giáo viên vào session
+                st.success("Đăng nhập thành công!")
+                st.balloons()
+                st.switch_page("app.py")
             else:
-                try:
-                    result = login_teacher(email=email, password=password)
-                    
-                    if result and result.get('success'):
-                        # Lưu token và thông tin teacher
-                        save_auth_state(result['token'], result['teacher'])
-                        st.success(f"Login successful! Welcome {result['teacher']['name']}")
-                        st.switch_page("out.py")
-                    else:
-                        st.error(result.get('message', 'Login failed'))
-                except Exception as e:
-                    st.error(f"Connection error: {e}")
+                st.error(result.get("message", "Đăng nhập thất bại"))
     
     col_link1, col_link2, col_link3 = st.columns([1, 2, 1])
     with col_link2:
