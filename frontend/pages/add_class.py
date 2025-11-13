@@ -97,8 +97,8 @@ with col_right:
 
     if save_btn:
         data = {
-            "major": major_options.get(selected_major, ""),
-            "type": type_options.get(selected_type, ""),
+            "major": major_options.get(selected_major, ""),      # gửi tên chuyên ngành
+            "type": type_options.get(selected_type, ""),         # gửi tên loại hình
             "year": year,
             "major_code": major_code,
             "class_code": class_code,
@@ -108,7 +108,7 @@ with col_right:
             "date_start": str(date_start),
             "date_end": str(date_end),
             "weekday": weekday_str,
-            "shift": shift_options.get(shift, ""),
+            "shift": shift_options.get(shift, ""),               # gửi tên ca học
             "class_name": shortcode,
             "full_class_name": f"{year}-{major_code}-{class_code}",
             "subject": subject
@@ -118,7 +118,6 @@ with col_right:
             st.success("Tạo lớp học thành công!")
         else:
             st.error("Tạo lớp học thất bại!")
-
     st.markdown(
         '<div class="note" style="margin-top:24px;">Bạn đã có lớp của mình? <span style="color:#e74c3c;">Tại đây</span></div>',
         unsafe_allow_html=True
