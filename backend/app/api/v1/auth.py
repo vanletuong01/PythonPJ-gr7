@@ -1,31 +1,23 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from backend.app.schemas.login import LoginCreate, LoginIn, LoginOut
-from backend.app.crud.login import get_login_by_email, create_login
-from backend.app.services.auth_service import verify_password, create_access_token
 from backend.app.database import get_db
+from backend.app.schemas.login import LoginCreate, LoginIn, LoginOut
+from backend.app.crud.login import create_login, login_user
 
 router = APIRouter()
 
-from fastapi import HTTPException
-
-@router.post("/register", response_model=LoginOut)
+@router.post("/register", response_model=LoginOut, response_model_exclude_none=True)
 def register(login: LoginCreate, db: Session = Depends(get_db)):
-    if not login.email.endswith("@vaa.edu.vn"):
-        raise HTTPException(status_code=400, detail="Email phải có tên miền @vaa.edu.vn")
-    if get_login_by_email(db, login.email):
-        raise HTTPException(status_code=400, detail="Email đã được đăng ký")
-    return create_login(db, login)
+    try:
+        return create_login(db, login)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/login")
 def login(login: LoginIn, db: Session = Depends(get_db)):
-    db_login = get_login_by_email(db, login.email)
-    if not db_login or not verify_password(login.password, db_login.pass_field):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = create_access_token({"sub": db_login.email})
-    return {"access_token": token, "token_type": "bearer", "user": {
-        "id_login": db_login.id_login,
-        "email": db_login.email,
-        "name": db_login.name,
-        "phone": db_login.phone
-    }}
+    result = login_user(db, login)
+    if not result.get("success"):
+        raise HTTPException(status_code=401, detail=result.get("message"))
+    return result

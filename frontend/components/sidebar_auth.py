@@ -1,68 +1,58 @@
 import streamlit as st
 from pathlib import Path
 
-st.markdown("""
-            <style>
-            section[data-testid="stSidebar"] {
-                background-color: #ffffff;
-            }
-            </style>
-        """, unsafe_allow_html=True)
-
 def render_auth_sidebar():
+    st.markdown("""
+        <style>
+        [data-testid="stSidebar"] {
+            min-width: 350px !important;
+            max-width: 350px !important;
+            background: #ffffff !important;
+            border-right: 1px solid #e5e7eb;
+        }
+        .sidebar-logo img {
+            width: 300px !important;
+            height: auto !important;
+            display: block;
+            margin: 0 auto 18px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        }
+        .dual-buttons .stButton > button {
+            width: 100%;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     with st.sidebar:
-        if st.session_state.get('logged_in', False):
-            # Hiện tên giáo viên
-            st.markdown(f"""
-                <div class="user-info">
-                    <div class="user-details">
-                        <div class="user-name">{st.session_state.teacher['name']}</div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown("""
-                <div class="sidebar-auth-links">
-                    <a href="/login" target="_self">Đăng nhập</a>
-                    <span>/</span>
-                    <a href="/register" target="_self">Đăng ký</a>
-                </div>
-            """, unsafe_allow_html=True)
-            st.markdown("<div style='margin: 10px 0;'></div>", unsafe_allow_html=True)
-    
-        # Logo
         logo_path = Path(__file__).parent.parent / "public" / "images" / "logo.png"
         if logo_path.exists():
-            st.image(str(logo_path), width=180)
-        # Tên trường
+            st.image(str(logo_path))
+
         st.markdown("""
-            <div class="sidebar-school-title">
-                <p>VIETNAM AVIATION ACADEMY</p>
-                <p>Học Viện Hàng Không<br>Việt Nam</p>
-            </div>
+        <div style="text-align:center;padding:12px 8px;">
+            <h3 style="margin:6px 0;font-size:17px;letter-spacing:1.2px;color:#666;text-transform:uppercase;">Vietnam Aviation Academy</h3>
+            <h2 style="margin:8px 0;font-size:22px;font-weight:600;color:#222;">Học Viện Hàng Không Việt Nam</h2>
+            <p style="font-size:15px;color:#888;margin-top:8px;">Chào mừng tới trang điểm danh sinh viên</p>
+        </div>
         """, unsafe_allow_html=True)
-        
-        st.markdown("<div style='margin: 15px 0;'><hr style='margin: 0; border: none; border-top: 1px solid #000000;'></div>", unsafe_allow_html=True)
-    
-        # Logged in state - show logout button
-        if st.session_state.get('logged_in', False):
-            # Dòng chào mừng
-            st.markdown("""
-                <p style="text-align: center; font-size: 11px; color: #888; line-height: 1.4;">
-                    Chào mừng tới trang<br>điểm danh sinh viên
-                </p>
-            """, unsafe_allow_html=True)
-            
-            st.markdown("<div style='margin: 15px 0;'></div>", unsafe_allow_html=True)
-            
-            if st.button("Đăng xuất"):
+
+        if not st.session_state.get("logged_in", False):
+            st.markdown("---")
+            st.markdown("**Đăng nhập / Đăng ký**")
+            col_login, col_register = st.columns(2, gap="small")
+            with col_login:
+                login_clicked = st.button("🔐 Đăng nhập", key="login_btn")
+            with col_register:
+                register_clicked = st.button("📝 Đăng ký", key="register_btn")
+            if login_clicked:
+                st.switch_page("pages/login.py")
+            if register_clicked:
+                st.switch_page("pages/register.py")
+        else:
+            teacher_name = st.session_state.get("teacher", {}).get("name", "User")
+            st.success(f"👤 Xin chào, {teacher_name}!")
+            if st.button("🚪 Đăng xuất"):
                 st.session_state.logged_in = False
                 st.session_state.teacher = {}
                 st.rerun()
-        else:
-            # Dòng chào mừng khi chưa đăng nhập
-            st.markdown("""
-                <p style="text-align: center; font-size: 11px; color: #888; line-height: 1.4;">
-                    Chào mừng tới trang<br>điểm danh sinh viên
-                </p>
-            """, unsafe_allow_html=True)

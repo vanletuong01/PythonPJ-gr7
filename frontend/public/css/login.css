@@ -1,19 +1,19 @@
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
+#MainMenu {
+    visibility: hidden;
+}
 
-[data-testid="stSidebar"] {
-    display: none !important;
+footer {
+    visibility: hidden;
 }
-section[data-testid="stSidebar"] {
-    display: none !important;
+
+header {
+    visibility: hidden;
 }
-[data-testid="stSidebarNav"] {
-    display: none !important;
-}
-nav {
-    display: none !important;
-}
+
+[data-testid="stSidebar"],
+section[data-testid="stSidebar"],
+[data-testid="stSidebarNav"],
+nav,
 .css-1d391kg {
     display: none !important;
 }
@@ -24,91 +24,90 @@ nav {
 }
 
 .block-container {
-    padding: 2rem 1rem !important;
+    padding: 0 !important;
     max-width: 100% !important;
 }
 
-/* Login container */
-.login-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    gap: 50px;
+img {
+    max-width: none !important;
 }
 
-.login-left {
-    flex: 1;
-    text-align: center;
+/* Logo */
+.login-logo-wrapper {
+    margin: 0;
+    padding: 0;
 }
 
-.login-right {
-    flex: 1;
-    max-width: 400px;
+.login-logo {
+    width: 300px !important;
+    height: auto !important;
+    display: block;
+    margin: 0 auto -40px auto;
+    transform: translateY(-40px);
+    border: none !important;
+    box-shadow: none !important;
 }
 
-.login-illustration {
-    max-width: 100%;
-    height: auto;
+.login-title-block {
+    margin: -20px 0 24px 0 !important;
+    padding: 0 !important;
 }
 
-.logo-login {
-    width: 120px;
-    margin-bottom: 20px;
+/* Labels */
+.stTextInput>label {
+    font-size: 14px !important;
+    color: #333 !important;
+    font-weight: 500 !important;
+    min-width: 70px !important;
+    display: inline-block !important;
 }
 
-.welcome-title {
-    font-size: 28px;
-    font-weight: 700;
-    color: #333;
-    margin-bottom: 10px;
+.stTextInput>div>div>input {
+    border-radius: 8px !important;
+    border: 1px solid #ddd !important;
+    padding: 8px !important;
+    font-size: 14px !important;
 }
 
-.welcome-subtitle {
-    font-size: 14px;
-    color: #888;
-    margin-bottom: 30px;
+.stTextInput {
+    max-width: 350px !important;
+    margin: 0 auto !important;
 }
 
-/* Form styling */
-.stTextInput > label {
-    font-size: 14px;
-    color: #333;
-    font-weight: 500;
+/* Login button ra giữa */
+button[key="login_btn"] {
+    width: 250px !important;
+    /* thu nhỏ chiều rộng */
+    max-width: 250px !important;
+    background: #6a6a6a !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 18px 12px !important;
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
+    display: block !important;
+    margin: 16px auto 0 auto !important;
+    /* căn giữa */
 }
 
-.stTextInput > div > div > input {
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    padding: 12px;
-    font-size: 14px;
+button[key="login_btn"]:hover {
+    background: #555 !important;
 }
 
-.stButton > button {
-    width: 100%;
-    background: #000;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 14px;
-    font-weight: 600;
-    font-size: 15px;
-    margin-top: 10px;
+button[key="go_to_register"] {
+    background: none !important;
+    color: #667eea !important;
+    padding: 6px 12px !important;
+    width: auto !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
-.stButton > button:hover {
-    background: #333;
-}
-
-.register-link {
-    text-align: center;
-    margin-top: 20px;
-    font-size: 13px;
-    color: #666;
-}
-
-.register-link a {
-    color: #667eea;
-    text-decoration: none;
-    font-weight: 600;
+button[key="go_to_register"]:hover {
+    text-decoration: underline !important;
+    color: #445bbd !important;
 }

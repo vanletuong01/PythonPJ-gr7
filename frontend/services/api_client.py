@@ -1,70 +1,88 @@
-import streamlit as st
+import os
 import requests
-API_BASE_URL = "http://localhost:8000/api/v1"
 
-def login_teacher(email, password):
-    resp = requests.post(
-        f"{API_BASE_URL}/auth/login",
-        json={"email": email, "password": password}
-    )
-    try:
-        data = resp.json()
-    except Exception:
-        data = {}
-    if resp.status_code == 200:
-        return {
-            "success": True,
-            "token": data.get("access_token"),
-            "user": data.get("user")
-        }
-    else:
-        return {
-            "success": False,
-            "message": data.get("detail", "Đăng nhập thất bại")
-        }
-def register_teacher(email, password, name, phone=""):
-    resp = requests.post(
-        f"{API_BASE_URL}/auth/register",
-        json={
-            "email": email,
-            "password": password,
-            "name": name,
-            "phone": phone
-        }
-    )
-    try:
-        data = resp.json()
-    except Exception:
-        data = {}
-    print("REGISTER RESPONSE:", resp.status_code, data)
+API_BASE = os.getenv("API_BASE", "http://127.0.0.1:5000/api/v1")
+TIMEOUT = int(os.getenv("API_TIMEOUT", "20"))
 
-    if resp.status_code == 200:
-        return {"success": True, "user": data}
-    else:
-        return {"success": False, "message": data.get("detail", "Đăng ký thất bại")}
-def create_class(data):
-    resp = requests.post(f"{API_BASE_URL}/class/create", json=data)
-    return resp
-def get_majors():
-    resp = requests.get(f"{API_BASE_URL}/class/majors")
+def _safe_json(resp):
     try:
         return resp.json()
-    except Exception:
-        st.error("Không lấy được dữ liệu chuyên ngành. Kiểm tra backend hoặc API.")
+    except:
+        return {"success": False, "message": resp.text or f"HTTP {resp.status_code}"}
+
+def register_teacher(email: str, password: str, name: str):
+    url = f"{API_BASE}/auth/register"
+    payload = {"email": email, "password": password, "name": name}
+    try:
+        resp = requests.post(url, json=payload, timeout=TIMEOUT)
+        data = _safe_json(resp)
+        data.setdefault("status", resp.status_code)
+        data.setdefault("url", url)
+        return data
+    except Exception as e:
+        return {"success": False, "message": str(e), "status": 0}
+
+def login_teacher(email: str, password: str):
+    url = f"{API_BASE}/auth/login"
+    payload = {"email": email, "password": password}
+    try:
+        resp = requests.post(url, json=payload, timeout=TIMEOUT)
+        data = _safe_json(resp)
+        data.setdefault("status", resp.status_code)
+        return data
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+
+def get_majors():
+    try:
+        resp = requests.get(f"{API_BASE}/class/majors", timeout=TIMEOUT)
+        return resp.json() if resp.status_code == 200 else []
+    except:
         return []
 
 def get_types():
-    resp = requests.get(f"{API_BASE_URL}/class/types")
     try:
-        return resp.json()
-    except Exception:
-        st.error("Không lấy được dữ liệu loại lớp. Kiểm tra backend hoặc API.")
+        resp = requests.get(f"{API_BASE}/class/types", timeout=TIMEOUT)
+        return resp.json() if resp.status_code == 200 else []
+    except:
         return []
 
 def get_shifts():
-    resp = requests.get(f"{API_BASE_URL}/class/shifts")
     try:
-        return resp.json()
-    except Exception:
-        st.error("Không lấy được dữ liệu ca học. Kiểm tra backend hoặc API.")
+        resp = requests.get(f"{API_BASE}/class/shifts", timeout=TIMEOUT)
+        return resp.json() if resp.status_code == 200 else []
+    except:
         return []
+
+def get_classes():
+    try:
+        resp = requests.get(f"{API_BASE}/class/list", timeout=TIMEOUT)
+        return resp.json() if resp.status_code == 200 else []
+    except:
+        return []
+
+def get_dashboard_stats():
+    try:
+        resp = requests.get(f"{API_BASE}/class/dashboard/stats", timeout=TIMEOUT)
+        return resp.json() if resp.status_code == 200 else {}
+    except:
+        return {}
+
+def create_class(data: dict):
+    url = f"{API_BASE}/class/create"
+    print(f"[DEBUG] create_class calling {url}")
+    try:
+        resp = requests.post(url, json=data, timeout=TIMEOUT)
+        return resp
+    except requests.exceptions.ConnectionError as e:
+        print(f"[ERROR] ConnectionError: {e}")
+        class MockResp:
+            status_code = 0
+            text = "Không kết nối được backend"
+        return MockResp()
+    except Exception as e:
+        print(f"[ERROR] create_class: {e!r}")
+        class MockResp:
+            status_code = 0
+            text = str(e)
+        return MockResp()

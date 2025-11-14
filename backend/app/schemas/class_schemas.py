@@ -1,24 +1,50 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, field_validator
 from datetime import date
 
 class ClassCreate(BaseModel):
     quantity: int
-    rank: str = None
     semester: str
     date_start: date
     date_end: date
-    session: str
     class_name: str
-    full_class_name: str
+    full_class_name: str | None = None
     teacher_class: str
-    type_id: int
-    major_id: int
-    shift_id: int
+    session: str
+    rank: str | None = None
+    TypeID: int
+    MajorID: int
+    ShiftID: int
+    
+    @field_validator('teacher_class', 'session', 'class_name')
+    @classmethod
+    def check_not_empty(cls, v, info):
+        if not v or v.strip() == "":
+            raise ValueError(f"{info.field_name} không được để trống")
+        return v.strip()
+    
+    @field_validator('quantity')
+    @classmethod
+    def check_positive(cls, v):
+        if v < 1:
+            raise ValueError("Sĩ số phải lớn hơn 0")
+        return v
+    
+    @field_validator('date_end')
+    @classmethod
+    def check_date_range(cls, v, info):
+        if 'date_start' in info.data and v < info.data['date_start']:
+            raise ValueError("Ngày kết thúc phải sau ngày bắt đầu")
+        return v
 
 class ClassOut(BaseModel):
     ClassID: int
-    class_name: str
-    full_class_name: str
-
-    class Config:
-        from_attributes = True
+    ClassName: str
+    FullClassName: str | None = None
+    Teacher_class: str | None = None
+    Quantity: int
+    Semester: str
+    DateStart: date
+    DateEnd: date
+    Session: str | None = None
+    
+    model_config = ConfigDict(from_attributes=True)

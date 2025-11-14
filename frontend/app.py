@@ -56,14 +56,38 @@ if bg_base64:
 
 render_auth_sidebar()
 
+# CSS cho hàng nút cố định chiều rộng và ngang hàng
+st.markdown("""
+<style>
+.action-bar {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    flex-wrap: nowrap;
+    margin-top: 8px;
+}
+.action-bar .stButton > button {
+    width: 150px !important;   /* chỉnh chiều rộng ở đây */
+    padding: px 4px;
+    font-size: 14px;
+    font-weight: 600;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Thay phần tạo 2 nút (đang dọc) bằng columns để nằm ngang
 st.markdown('<div class="right-container"><div class="top-right-actions">', unsafe_allow_html=True)
-col1, col2 = st.columns([1, 1])
-with col1:
-    st.button("Vào lớp", key="vao_lop_btn")
-with col2:
-    if st.button("Thêm lớp học", key="them_lop_btn"):
-        if st.session_state.get("logged_in", False):
-            st.switch_page("pages/add_class.py")
-        else:
-            st.warning("Bạn cần đăng nhập để thêm lớp học.")
+
+col_a, col_b = st.columns([1, 1])
+with col_a:
+    btn_vao = st.button("Vào lớp", key="vao_lop_btn")
+with col_b:
+    btn_them = st.button("Thêm lớp học", key="them_lop_btn")
+
+if btn_them:
+    if st.session_state.get("logged_in", False):
+        st.switch_page("pages/add_class.py")
+    else:
+        st.warning("Bạn cần đăng nhập để thêm lớp học.")
+
 st.markdown('</div></div>', unsafe_allow_html=True)

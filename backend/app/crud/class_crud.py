@@ -1,54 +1,52 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import text
 from backend.app.models.class_model import Class
 from backend.app.schemas.class_schemas import ClassCreate
-import datetime
-def get_weekday(date_str):
-    # date_str: 'YYYY-MM-DD'
-    try:
-        date_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d")
-        weekday_map = {
-            0: "Thứ 2",
-            1: "Thứ 3",
-            2: "Thứ 4",
-            3: "Thứ 5",
-            4: "Thứ 6",
-            5: "Thứ 7",
-            6: "Chủ nhật"
-        }
-        return weekday_map[date_obj.weekday()]
-    except Exception:
-        return None
+
+def create_class(db: Session, class_data: ClassCreate):
+    print(f"[create_class] START data={class_data.model_dump()}")
     
-def create_class(db: Session, payload):
-    # payload: dict từ frontend
-    classname = payload.get("class_name") or payload.get("ClassName") or ""
-    full = payload.get("full_class_name") or payload.get("FullClassName") or ""
-    quantity = payload.get("quantity") or 0
-    new = Class(
-        Quantity=int(quantity),
-        Semester=payload.get("semester",""),
-        DateStart=payload.get("date_start"),
-        DateEnd=payload.get("date_end"),
-        Session=payload.get("session"),
-        ClassName=classname,
-        FullClassName=full,
-        Teacher_class=payload.get("teacher_class"),
-        TypeID=payload.get("type_id"),
-        MajorID=payload.get("major_id"),
-        ShiftID=payload.get("shift_id")
+    # Kiểm tra mã lớp đã tồn tại
+    existing = db.query(Class).filter(Class.ClassName == class_data.class_name).first()
+    if existing:
+        print(f"[create_class] ClassName '{class_data.class_name}' đã tồn tại (ClassID={existing.ClassID})")
+        raise ValueError(f"Mã lớp '{class_data.class_name}' đã tồn tại trong hệ thống")
+    
+    db_class = Class(
+        Quantity=class_data.quantity,
+        Semester=class_data.semester,
+        DateStart=class_data.date_start,
+        DateEnd=class_data.date_end,
+        ClassName=class_data.class_name,
+        FullClassName=class_data.full_class_name,
+        Teacher_class=class_data.teacher_class,
+        Session=class_data.session,
+        Rank=class_data.rank,
+        TypeID=class_data.TypeID,
+        MajorID=class_data.MajorID,
+        ShiftID=class_data.ShiftID
     )
-    db.add(new)
-    db.commit()
-    db.refresh(new)
-    return new
+    
+    db.add(db_class)
+    try:
+        db.commit()
+        db.refresh(db_class)
+        print(f"[create_class] COMMIT OK ClassID={db_class.ClassID}")
+        return db_class
+    except Exception as e:
+        db.rollback()
+        print(f"[create_class] ROLLBACK error={e!r}")
+        raise e
+
+def get_all_classes(db: Session):
+    return db.query(Class).all()
+
 def get_all_majors(db: Session):
     rows = db.execute(text("SELECT MajorID, MajorName FROM major")).fetchall()
     return [{"MajorID": row[0], "MajorName": row[1]} for row in rows]
 
 def get_all_types(db: Session):
     rows = db.execute(text("SELECT TypeID, TypeName FROM type")).fetchall()
-    return [{"TypeID": row[0], "TypeName": row[1]} for row in rows]
+    return [{"ShiftID": row[0], "ShiftName": row[1]} for row in rows]
 
 def get_all_shifts(db: Session):
     rows = db.execute(text("SELECT ShiftID, ShiftName FROM shift")).fetchall()

@@ -1,18 +1,18 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict
 
 class LoginCreate(BaseModel):
-    email: str  # Đổi EmailStr → str
+    email: EmailStr
     password: str
     name: str
     phone: str | None = None
 
-class LoginIn(BaseModel):
-    email: str  # Đổi EmailStr → str
+class LoginRequest(BaseModel):
+    email: EmailStr
     password: str
 
 class LoginOut(BaseModel):
     id_login: int
-    email: str  # Đổi EmailStr → str
+    email: EmailStr
     name: str | None = None
     phone: str | None = None
 

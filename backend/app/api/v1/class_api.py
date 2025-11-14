@@ -1,55 +1,67 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import func
 from backend.app.database import get_db
-from backend.app.crud.class_crud import create_class as crud_create_class, get_all_majors, get_all_types, get_all_shifts
-
-# Thêm import các model
-from backend.app.models.type import Type
+from backend.app.schemas.class_schemas import ClassCreate, ClassOut
+from backend.app.crud.class_crud import create_class, get_all_classes
 from backend.app.models.major import Major
+from backend.app.models.type import Type
 from backend.app.models.shift import Shift
+from backend.app.models.class_model import Class
 
 router = APIRouter()
 
-@router.post("/create")
-async def api_create_class(request: Request, db: Session = Depends(get_db)):
+@router.post("/create", response_model=ClassOut)
+def api_create_class(class_data: ClassCreate, db: Session = Depends(get_db)):
     try:
-        payload = await request.json()
-        print("DEBUG payload:", payload)
-
-        # Tra ID từ tên
-        type_obj = db.query(Type).filter(Type.TypeName == payload.get("type")).first()
-        major_obj = db.query(Major).filter(Major.MajorName == payload.get("major")).first()
-        shift_obj = db.query(Shift).filter(Shift.ShiftName == payload.get("shift")).first()
-
-        # Gán ID vào payload, nếu không tìm thấy thì trả lỗi
-        payload["TypeID"] = type_obj.TypeID if type_obj else None
-        payload["MajorID"] = major_obj.MajorID if major_obj else None
-        payload["ShiftID"] = shift_obj.ShiftID if shift_obj else None
-
-        # Xoá các trường tên nếu không cần
-        payload.pop("type", None)
-        payload.pop("major", None)
-        payload.pop("shift", None)
-
-        # Kiểm tra nếu thiếu ID thì trả lỗi
-        if not payload["TypeID"] or not payload["MajorID"] or not payload["ShiftID"]:
-            raise HTTPException(status_code=400, detail="Type, Major hoặc Shift không hợp lệ!")
-
-        created = crud_create_class(db, payload)
-        return {"status": "ok", "id": created.ClassID}
+        result = create_class(db, class_data)
+        print(f"[api_create_class] SUCCESS ClassID={result.ClassID}")
+        return result
+    except ValueError as e:
+        # Lỗi validation (mã lớp trùng)
+        print(f"[api_create_class] ValueError: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except IntegrityError as e:
+        print(f"[api_create_class] IntegrityError: {e.orig}")
+        raise HTTPException(status_code=400, detail=f"Lỗi ràng buộc DB: {e.orig}")
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        print(f"[api_create_class] ERROR: {e!r}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/list", response_model=list[ClassOut])
+def api_list_classes(db: Session = Depends(get_db)):
+    return get_all_classes(db)
+
+@router.get("/dashboard/stats")
+def api_dashboard_stats(db: Session = Depends(get_db)):
+    """Thống kê cho dashboard"""
+    total_classes = db.query(func.count(Class.ClassID)).scalar()
+    total_students = db.query(func.sum(Class.Quantity)).scalar() or 0
+    
+    # Sĩ số theo tháng (giả sử lấy theo DateStart)
+    attendance_by_month = db.query(
+        func.date_format(Class.DateStart, '%Y-%m').label('month'),
+        func.count(Class.ClassID).label('count')
+    ).group_by('month').order_by('month').limit(6).all()
+    
+    return {
+        "total_classes": total_classes,
+        "total_students": total_students,
+        "attendance_by_month": [{"month": m, "count": c} for m, c in attendance_by_month]
+    }
 
 @router.get("/majors")
 def api_get_majors(db: Session = Depends(get_db)):
-    return get_all_majors(db)
+    majors = db.query(Major).all()
+    return [{"MajorID": m.MajorID, "MajorName": m.MajorName} for m in majors]
 
 @router.get("/types")
 def api_get_types(db: Session = Depends(get_db)):
-    return get_all_types(db)
+    types = db.query(Type).all()
+    return [{"TypeID": t.TypeID, "TypeName": t.TypeName} for t in types]
 
 @router.get("/shifts")
 def api_get_shifts(db: Session = Depends(get_db)):
-    return get_all_shifts(db)
+    shifts = db.query(Shift).all()
+    return [{"ShiftID": s.ShiftID, "ShiftName": s.ShiftName} for s in shifts]
