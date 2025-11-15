@@ -115,3 +115,12 @@ def create_student(payload: dict, uploaded_file=None):
             "success": False,
             "message": str(e)
         }
+    
+def get_classes_by_teacher(id_login):
+    try:
+        resp = requests.get(f"{API_BASE}/class/by_teacher/{id_login}")
+        if resp.status_code == 200:
+            return resp.json()
+        return []
+    except Exception:
+        return []

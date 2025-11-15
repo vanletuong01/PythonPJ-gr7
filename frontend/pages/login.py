@@ -49,16 +49,21 @@ with col2:
     with col_btn:
         if st.button("Login", key="login_btn"):
             if not (email and password):
-                st.error("❌ Vui lòng nhập email và mật khẩu")
+                st.error("Vui lòng nhập email và mật khẩu")
             else:
                 result = login_teacher(email, password)
                 if result and result.get("success"):
-                    st.success("✅ Đăng nhập thành công!")
+                    st.success("Đăng nhập thành công!")
                     st.session_state.logged_in = True
-                    st.session_state.teacher = result.get("teacher", {})
+                    st.session_state.teacher = {
+                        "id_login": result.get("id_login"),
+                        "email": result.get("email"),
+                        "name": result.get("name"),
+                        "phone": result.get("phone"),
+                    }
                     st.switch_page("app.py")
                 else:
-                    st.error(f"❌ {result.get('message', 'Đăng nhập thất bại')}")
+                    st.error(f"{result.get('message', 'Đăng nhập thất bại')}")
 
     # Register căn giữa
     st.markdown('<div style="text-align:center;margin-top:18px;font-size:14px;color:#777;">Don\'t have an account?</div>', unsafe_allow_html=True)

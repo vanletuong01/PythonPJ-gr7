@@ -2,10 +2,10 @@
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Máy chủ: 127.0.0.1
--- Thời gian đã tạo: Th10 08, 2025 lúc 02:55 PM
--- Phiên bản máy phục vụ: 10.4.32-MariaDB
--- Phiên bản PHP: 8.2.12
+-- Host: 127.0.0.1:3307
+-- Generation Time: Nov 14, 2025 at 06:02 PM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,13 +18,13 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Cơ sở dữ liệu: `python_project`
+-- Database: `python_project`
 --
 
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `attendance`
+-- Table structure for table `attendance`
 --
 
 CREATE TABLE `attendance` (
@@ -38,7 +38,7 @@ CREATE TABLE `attendance` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `class`
+-- Table structure for table `class`
 --
 
 CREATE TABLE `class` (
@@ -51,16 +51,26 @@ CREATE TABLE `class` (
   `Session` varchar(45) DEFAULT NULL,
   `ClassName` varchar(100) NOT NULL,
   `FullClassName` varchar(200) DEFAULT NULL,
+  `CourseCode` int(11) NOT NULL,
   `Teacher_class` varchar(100) DEFAULT NULL,
   `TypeID` int(11) NOT NULL,
   `MajorID` int(11) NOT NULL,
   `ShiftID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `class`
+--
+
+INSERT INTO `class` (`ClassID`, `Quantity`, `Rank`, `Semester`, `DateStart`, `DateEnd`, `Session`, `ClassName`, `FullClassName`, `CourseCode`, `Teacher_class`, `TypeID`, `MajorID`, `ShiftID`) VALUES
+(3, 60, NULL, 'Học kỳ 1', '2025-09-09', '2025-11-25', '', '23ĐHTT01', '010101001', 0, 'Trần Anh Tuấn', 1, 1, 1),
+(4, 60, NULL, 'Học kỳ 1', '2025-09-09', '2025-11-11', 'Thứ 3', '23ĐHTT01', '0101010801', 0, 'Nguyễn Lương Anh Tuấn', 1, 1, 2),
+(11, 30, NULL, 'Học kỳ 1', '2025-09-09', '2025-11-25', 'Toán', '24102', '2024-1-0101020302', 0, 'Lê Tường Vân', 1, 1, 3);
+
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `login`
+-- Table structure for table `login`
 --
 
 CREATE TABLE `login` (
@@ -71,10 +81,18 @@ CREATE TABLE `login` (
   `pass` varchar(100) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- Dumping data for table `login`
+--
+
+INSERT INTO `login` (`id_login`, `email`, `phone`, `name`, `pass`) VALUES
+(7, '2331540160@vaa.edu.vn', '', 'Tường Vân', '$2b$12$hpGI.wyS2h4e.TR3G/dg1.39xtWc6NQkBzo6HkBZD5s1cOTS/dd4G'),
+(8, '2331540161@vaa.edu.vn', NULL, 'Thảo Vy', '$2b$12$5woaCKAWbRp4sJDY8QcaO.bLjjtvu6qRog05vbBXMlJjwXx7ASTCq');
+
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `major`
+-- Table structure for table `major`
 --
 
 CREATE TABLE `major` (
@@ -84,7 +102,7 @@ CREATE TABLE `major` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `major`
+-- Dumping data for table `major`
 --
 
 INSERT INTO `major` (`MajorID`, `MajorName`, `Full_name_mj`) VALUES
@@ -103,7 +121,7 @@ INSERT INTO `major` (`MajorID`, `MajorName`, `Full_name_mj`) VALUES
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `shift`
+-- Table structure for table `shift`
 --
 
 CREATE TABLE `shift` (
@@ -114,7 +132,7 @@ CREATE TABLE `shift` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `shift`
+-- Dumping data for table `shift`
 --
 
 INSERT INTO `shift` (`ShiftID`, `ShiftName`, `TimeStart`, `TimeEnd`) VALUES
@@ -125,7 +143,7 @@ INSERT INTO `shift` (`ShiftID`, `ShiftName`, `TimeStart`, `TimeEnd`) VALUES
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `student`
+-- Table structure for table `student`
 --
 
 CREATE TABLE `student` (
@@ -146,7 +164,7 @@ CREATE TABLE `student` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `student_embeddings`
+-- Table structure for table `student_embeddings`
 --
 
 CREATE TABLE `student_embeddings` (
@@ -163,7 +181,7 @@ CREATE TABLE `student_embeddings` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `study`
+-- Table structure for table `study`
 --
 
 CREATE TABLE `study` (
@@ -175,7 +193,7 @@ CREATE TABLE `study` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `teach`
+-- Table structure for table `teach`
 --
 
 CREATE TABLE `teach` (
@@ -187,7 +205,7 @@ CREATE TABLE `teach` (
 -- --------------------------------------------------------
 
 --
--- Cấu trúc bảng cho bảng `type`
+-- Table structure for table `type`
 --
 
 CREATE TABLE `type` (
@@ -196,7 +214,7 @@ CREATE TABLE `type` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Đang đổ dữ liệu cho bảng `type`
+-- Dumping data for table `type`
 --
 
 INSERT INTO `type` (`TypeID`, `TypeName`) VALUES
@@ -205,18 +223,18 @@ INSERT INTO `type` (`TypeID`, `TypeName`) VALUES
 (3, 'Hệ vừa học vừa làm');
 
 --
--- Chỉ mục cho các bảng đã đổ
+-- Indexes for dumped tables
 --
 
 --
--- Chỉ mục cho bảng `attendance`
+-- Indexes for table `attendance`
 --
 ALTER TABLE `attendance`
   ADD PRIMARY KEY (`AttendanceID`),
   ADD KEY `StudyID` (`StudyID`);
 
 --
--- Chỉ mục cho bảng `class`
+-- Indexes for table `class`
 --
 ALTER TABLE `class`
   ADD PRIMARY KEY (`ClassID`),
@@ -225,25 +243,25 @@ ALTER TABLE `class`
   ADD KEY `ShiftID` (`ShiftID`);
 
 --
--- Chỉ mục cho bảng `login`
+-- Indexes for table `login`
 --
 ALTER TABLE `login`
   ADD PRIMARY KEY (`id_login`);
 
 --
--- Chỉ mục cho bảng `major`
+-- Indexes for table `major`
 --
 ALTER TABLE `major`
   ADD PRIMARY KEY (`MajorID`);
 
 --
--- Chỉ mục cho bảng `shift`
+-- Indexes for table `shift`
 --
 ALTER TABLE `shift`
   ADD PRIMARY KEY (`ShiftID`);
 
 --
--- Chỉ mục cho bảng `student`
+-- Indexes for table `student`
 --
 ALTER TABLE `student`
   ADD PRIMARY KEY (`StudentID`),
@@ -251,14 +269,14 @@ ALTER TABLE `student`
   ADD KEY `TypeID` (`TypeID`);
 
 --
--- Chỉ mục cho bảng `student_embeddings`
+-- Indexes for table `student_embeddings`
 --
 ALTER TABLE `student_embeddings`
   ADD PRIMARY KEY (`EmbeddingID`),
   ADD KEY `idx_student_embeddings_student` (`StudentID`);
 
 --
--- Chỉ mục cho bảng `study`
+-- Indexes for table `study`
 --
 ALTER TABLE `study`
   ADD PRIMARY KEY (`StudyID`),
@@ -266,7 +284,7 @@ ALTER TABLE `study`
   ADD KEY `ClassID` (`ClassID`);
 
 --
--- Chỉ mục cho bảng `teach`
+-- Indexes for table `teach`
 --
 ALTER TABLE `teach`
   ADD PRIMARY KEY (`id_teach`),
@@ -274,87 +292,87 @@ ALTER TABLE `teach`
   ADD KEY `class_teach` (`ClassID`);
 
 --
--- Chỉ mục cho bảng `type`
+-- Indexes for table `type`
 --
 ALTER TABLE `type`
   ADD PRIMARY KEY (`TypeID`);
 
 --
--- AUTO_INCREMENT cho các bảng đã đổ
+-- AUTO_INCREMENT for dumped tables
 --
 
 --
--- AUTO_INCREMENT cho bảng `attendance`
+-- AUTO_INCREMENT for table `attendance`
 --
 ALTER TABLE `attendance`
   MODIFY `AttendanceID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `class`
+-- AUTO_INCREMENT for table `class`
 --
 ALTER TABLE `class`
-  MODIFY `ClassID` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `ClassID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
--- AUTO_INCREMENT cho bảng `login`
+-- AUTO_INCREMENT for table `login`
 --
 ALTER TABLE `login`
-  MODIFY `id_login` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id_login` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
--- AUTO_INCREMENT cho bảng `major`
+-- AUTO_INCREMENT for table `major`
 --
 ALTER TABLE `major`
   MODIFY `MajorID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
--- AUTO_INCREMENT cho bảng `shift`
+-- AUTO_INCREMENT for table `shift`
 --
 ALTER TABLE `shift`
   MODIFY `ShiftID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
--- AUTO_INCREMENT cho bảng `student`
+-- AUTO_INCREMENT for table `student`
 --
 ALTER TABLE `student`
   MODIFY `StudentID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `student_embeddings`
+-- AUTO_INCREMENT for table `student_embeddings`
 --
 ALTER TABLE `student_embeddings`
   MODIFY `EmbeddingID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `study`
+-- AUTO_INCREMENT for table `study`
 --
 ALTER TABLE `study`
   MODIFY `StudyID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `teach`
+-- AUTO_INCREMENT for table `teach`
 --
 ALTER TABLE `teach`
   MODIFY `id_teach` int(50) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT cho bảng `type`
+-- AUTO_INCREMENT for table `type`
 --
 ALTER TABLE `type`
   MODIFY `TypeID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
--- Các ràng buộc cho các bảng đã đổ
+-- Constraints for dumped tables
 --
 
 --
--- Các ràng buộc cho bảng `attendance`
+-- Constraints for table `attendance`
 --
 ALTER TABLE `attendance`
   ADD CONSTRAINT `attendance_ibfk_1` FOREIGN KEY (`StudyID`) REFERENCES `study` (`StudyID`);
 
 --
--- Các ràng buộc cho bảng `class`
+-- Constraints for table `class`
 --
 ALTER TABLE `class`
   ADD CONSTRAINT `class_ibfk_1` FOREIGN KEY (`TypeID`) REFERENCES `type` (`TypeID`),
@@ -362,27 +380,27 @@ ALTER TABLE `class`
   ADD CONSTRAINT `class_ibfk_3` FOREIGN KEY (`ShiftID`) REFERENCES `shift` (`ShiftID`);
 
 --
--- Các ràng buộc cho bảng `student`
+-- Constraints for table `student`
 --
 ALTER TABLE `student`
   ADD CONSTRAINT `student_ibfk_1` FOREIGN KEY (`MajorID`) REFERENCES `major` (`MajorID`),
   ADD CONSTRAINT `student_ibfk_2` FOREIGN KEY (`TypeID`) REFERENCES `type` (`TypeID`);
 
 --
--- Các ràng buộc cho bảng `student_embeddings`
+-- Constraints for table `student_embeddings`
 --
 ALTER TABLE `student_embeddings`
   ADD CONSTRAINT `fk_student_embeddings_student` FOREIGN KEY (`StudentID`) REFERENCES `student` (`StudentID`) ON DELETE CASCADE;
 
 --
--- Các ràng buộc cho bảng `study`
+-- Constraints for table `study`
 --
 ALTER TABLE `study`
   ADD CONSTRAINT `study_ibfk_1` FOREIGN KEY (`StudentID`) REFERENCES `student` (`StudentID`),
   ADD CONSTRAINT `study_ibfk_2` FOREIGN KEY (`ClassID`) REFERENCES `class` (`ClassID`);
 
 --
--- Các ràng buộc cho bảng `teach`
+-- Constraints for table `teach`
 --
 ALTER TABLE `teach`
   ADD CONSTRAINT `class_teach` FOREIGN KEY (`ClassID`) REFERENCES `class` (`ClassID`) ON DELETE CASCADE ON UPDATE CASCADE,

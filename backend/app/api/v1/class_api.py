@@ -9,17 +9,27 @@ from backend.app.models.major import Major
 from backend.app.models.type import Type
 from backend.app.models.shift import Shift
 from backend.app.models.class_model import Class
+from backend.app.models.teach import Teach
 
 router = APIRouter()
 
 @router.post("/create", response_model=ClassOut)
 def api_create_class(class_data: ClassCreate, db: Session = Depends(get_db)):
     try:
+        # Tạo lớp mới
         result = create_class(db, class_data)
         print(f"[api_create_class] SUCCESS ClassID={result.ClassID}")
+
+        # --- Thêm đoạn này để gán giáo viên vào lớp ---
+        # Lấy id_login từ class_data (bạn cần thêm trường này vào ClassCreate schema)
+        id_login = getattr(class_data, "id_login", None)
+        if id_login:
+            new_teach = Teach(id_login=id_login, ClassID=result.ClassID)
+            db.add(new_teach)
+            db.commit()
+
         return result
     except ValueError as e:
-        # Lỗi validation (mã lớp trùng)
         print(f"[api_create_class] ValueError: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except IntegrityError as e:
@@ -65,3 +75,14 @@ def api_get_types(db: Session = Depends(get_db)):
 def api_get_shifts(db: Session = Depends(get_db)):
     shifts = db.query(Shift).all()
     return [{"ShiftID": s.ShiftID, "ShiftName": s.ShiftName} for s in shifts]
+
+@router.get("/by_teacher/{id_login}")
+def get_classes_by_teacher(id_login: int, db: Session = Depends(get_db)):
+    classes = (
+        db.query(Class)
+        .join(Teach, Class.ClassID == Teach.ClassID)
+        .filter(Teach.id_login == id_login)
+        .all()
+    )
+    # Luôn trả về list (kể cả khi rỗng)
+    return [c.__dict__ for c in classes]

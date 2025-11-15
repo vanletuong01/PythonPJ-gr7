@@ -95,5 +95,10 @@ if btn_them:
         st.switch_page("pages/add_class.py")
     else:
         st.warning("Bạn cần đăng nhập để thêm lớp học.")
+if btn_vao:
+    if st.session_state.get("logged_in", False):
+        st.switch_page("pages/join_class.py")
+    else:
+        st.warning("Bạn cần đăng nhập để vào lớp.")
 
 st.markdown('</div></div>', unsafe_allow_html=True)

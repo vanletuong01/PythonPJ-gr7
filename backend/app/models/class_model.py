@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Date, ForeignKey
 from backend.app.database import Base
 
+
 class Class(Base):
     __tablename__ = "class"
     
@@ -12,7 +13,7 @@ class Class(Base):
     Session = Column(String(45), nullable=True)
     ClassName = Column(String(100))
     FullClassName = Column(String(200), nullable=True)
-    CourseCode = Column(Integer, nullable=True)   # ← THÊM MỚI
+    CourseCode = Column(Integer, nullable=True)  # đổi sang Integer
     Teacher_class = Column(String(100), nullable=True)
     TypeID = Column(Integer, ForeignKey("type.TypeID"))
     MajorID = Column(Integer, ForeignKey("major.MajorID"))

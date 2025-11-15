@@ -1,18 +1,21 @@
 import time
-from passlib.hash import pbkdf2_sha256
+from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta
 from backend.config import SECRET_KEY, ALGORITHM
 
+# Dùng pbkdf2_sha256 cho thực tế, an toàn và tương thích với hash hiện tại
+pwd_context = CryptContext(
+    schemes=["pbkdf2_sha256"],
+    deprecated="auto"
+)
+
 def hash_password(password: str) -> str:
-    t0 = time.time()
-    print(f"[hash_password] START len={len(password)}")
-    h = pbkdf2_sha256.hash(password)
-    print(f"[hash_password] DONE len_hash={len(h)} time={int((time.time()-t0)*1000)}ms")
-    return h
+    print("HASH PASSWORD INPUT:", repr(password), type(password), len(password) if password else "None")
+    return pwd_context.hash(password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pbkdf2_sha256.verify(plain_password, hashed_password)
+    return pwd_context.verify(plain_password, hashed_password)
 
 def create_access_token(data: dict, expires_delta: timedelta = timedelta(hours=12)):
     to_encode = data.copy()
