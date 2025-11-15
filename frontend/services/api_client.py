@@ -1,7 +1,7 @@
 import os
 import requests
 
-API_BASE = os.getenv("API_BASE", "http://127.0.0.1:5000/api/v1")
+API_BASE = os.getenv("API_BASE", "http://127.0.0.1:8000/api/v1")
 TIMEOUT = int(os.getenv("API_TIMEOUT", "20"))
 
 def _safe_json(resp):
@@ -86,3 +86,32 @@ def create_class(data: dict):
             status_code = 0
             text = str(e)
         return MockResp()
+
+
+def create_student(payload: dict, uploaded_file=None):
+    """
+    Tạo sinh viên mới – gửi dữ liệu + ảnh (nếu có) xuống backend.
+    """
+    url = f"{API_BASE}/student/create"
+
+    try:
+        # Nếu có file ảnh
+        if uploaded_file is not None:
+            files = {
+                "StudentPhoto": (
+                    uploaded_file.name,
+                    uploaded_file.getvalue(),
+                    uploaded_file.type
+                )
+            }
+            resp = requests.post(url, data=payload, files=files, timeout=TIMEOUT)
+        else:
+            resp = requests.post(url, json=payload, timeout=TIMEOUT)
+
+        return _safe_json(resp)
+
+    except Exception as e:
+        return {
+            "success": False,
+            "message": str(e)
+        }

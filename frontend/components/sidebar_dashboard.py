@@ -26,6 +26,9 @@ def render_dashboard_sidebar():
         if st.button("➕ Thêm lớp học", use_container_width=True):
             st.switch_page("pages/add_class.py")
         
+        if st.button("👨‍🎓 Thêm sinh viên", use_container_width=True):
+            st.switch_page("pages/add_student.py")
+        
         if st.button("📊 Điểm danh", use_container_width=True):
             st.info("Chức năng đang phát triển")
         
