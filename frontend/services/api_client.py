@@ -86,3 +86,12 @@ def create_class(data: dict):
             status_code = 0
             text = str(e)
         return MockResp()
+    
+def get_classes_by_teacher(id_login):
+    try:
+        resp = requests.get(f"{API_BASE}/class/by_teacher/{id_login}")
+        if resp.status_code == 200:
+            return resp.json()
+        return []
+    except Exception:
+        return []

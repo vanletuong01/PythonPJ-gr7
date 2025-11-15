@@ -8,12 +8,14 @@ class ClassCreate(BaseModel):
     date_end: date
     class_name: str
     full_class_name: str | None = None
+    course_code: str 
     teacher_class: str
     session: str
-    rank: str | None = None
+    #rank: str | None = None
     TypeID: int
     MajorID: int
     ShiftID: int
+    id_login: int
     
     @field_validator('teacher_class', 'session', 'class_name')
     @classmethod
