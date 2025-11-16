@@ -59,10 +59,9 @@
 
 /* Page title */
 .page-title {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 700;
     color: #1f2937;
-    margin-bottom: 0.5rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -90,6 +89,7 @@
     padding: 2rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     border: 1px solid #e5e7eb;
+    margin-bottom: 1rem;
 }
 
 /* ========== FORM INPUTS ========== */
@@ -307,4 +307,104 @@ hr {
 
 .form-card {
     animation: fadeIn 0.3s ease-out;
+}
+
+/* ========== PILLS (FILTER / ACTION) ========== */
+.pill {
+    padding: .55rem 1rem;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    cursor: pointer;
+    user-select: none;
+    transition: .2s;
+}
+
+.pill:hover {
+    background: #e5e7eb;
+}
+
+.pill-neutral {
+    background: #ffffff;
+}
+
+.pill-danger {
+    background: #fce7e7;
+    color: #7f1d1d;
+    border-color: #f8c5c5;
+}
+
+.pill-danger:hover {
+    background: #f8c5c5;
+}
+
+.pill-active {
+    box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.15);
+}
+
+/* Toggle action buttons */
+button[kind][disabled][data-baseweb] {
+    background: #f8d2d2 !important;
+    color: #7f1d1d !important;
+    border: 1px solid #e9b4b4 !important;
+}
+
+.css-1emrehy {
+    /* optional class may vary per Streamlit version */
+}
+
+.stButton>button {
+    border-radius: 24px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    padding: .55rem 1rem !important;
+    border: 1px solid #e5e7eb !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+}
+
+.stButton>button:hover:enabled {
+    background: #f3f4f6 !important;
+}
+
+/* Top search pill */
+[data-testid="stTextInput"] input {
+    border-radius: 9999px !important;
+    padding: 0.5rem 1rem !important;
+    border: 1px solid #d1d5db !important;
+}
+
+/* Button disabled (hồng) */
+.stButton button:disabled {
+    background: #f6c1c5 !important;
+    color: #7f1d1d !important;
+    border: 1px solid #e9b4b4 !important;
+    border-radius: 20px !important;
+}
+
+/* Pink button (custom HTML) */
+.btn-pink {
+    background: #f8b4b8 !important;
+    color: #7f1d1d !important;
+    border: 1px solid #e9b4b4 !important;
+    border-radius: 20px !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    cursor: default !important;
+    width: 100%;
+}
+
+/* Search results card */
+.search-results {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }

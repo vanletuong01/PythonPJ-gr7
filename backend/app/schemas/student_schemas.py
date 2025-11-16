@@ -13,4 +13,3 @@ class StudentCreate(BaseModel):
     TypeID: int
     PhotoStatus: str = "NONE"
     StudentPhoto: str | None = None
-    ClassID: int

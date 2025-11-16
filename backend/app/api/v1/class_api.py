@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
+
 from backend.app.database import get_db
 from backend.app.schemas.class_schemas import ClassCreate, ClassOut
 from backend.app.crud.class_crud import create_class, get_all_classes
@@ -13,15 +14,20 @@ from backend.app.models.teach import Teach
 
 router = APIRouter()
 
+# --------------------------
+# ✔ FIX: API GET /api/v1/class/
+# --------------------------
+@router.get("/", response_model=list[ClassOut])
+def api_get_all_classes(db: Session = Depends(get_db)):
+    return get_all_classes(db)
+
+
 @router.post("/create", response_model=ClassOut)
 def api_create_class(class_data: ClassCreate, db: Session = Depends(get_db)):
     try:
-        # Tạo lớp mới
         result = create_class(db, class_data)
         print(f"[api_create_class] SUCCESS ClassID={result.ClassID}")
 
-        # --- Thêm đoạn này để gán giáo viên vào lớp ---
-        # Lấy id_login từ class_data (bạn cần thêm trường này vào ClassCreate schema)
         id_login = getattr(class_data, "id_login", None)
         if id_login:
             new_teach = Teach(id_login=id_login, ClassID=result.ClassID)
@@ -30,14 +36,12 @@ def api_create_class(class_data: ClassCreate, db: Session = Depends(get_db)):
 
         return result
     except ValueError as e:
-        print(f"[api_create_class] ValueError: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except IntegrityError as e:
-        print(f"[api_create_class] IntegrityError: {e.orig}")
         raise HTTPException(status_code=400, detail=f"Lỗi ràng buộc DB: {e.orig}")
     except Exception as e:
-        print(f"[api_create_class] ERROR: {e!r}")
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/list", response_model=list[ClassOut])
 def api_list_classes(db: Session = Depends(get_db)):
@@ -45,16 +49,14 @@ def api_list_classes(db: Session = Depends(get_db)):
 
 @router.get("/dashboard/stats")
 def api_dashboard_stats(db: Session = Depends(get_db)):
-    """Thống kê cho dashboard"""
     total_classes = db.query(func.count(Class.ClassID)).scalar()
     total_students = db.query(func.sum(Class.Quantity)).scalar() or 0
-    
-    # Sĩ số theo tháng (giả sử lấy theo DateStart)
+
     attendance_by_month = db.query(
         func.date_format(Class.DateStart, '%Y-%m').label('month'),
         func.count(Class.ClassID).label('count')
     ).group_by('month').order_by('month').limit(6).all()
-    
+
     return {
         "total_classes": total_classes,
         "total_students": total_students,
@@ -84,5 +86,4 @@ def get_classes_by_teacher(id_login: int, db: Session = Depends(get_db)):
         .filter(Teach.id_login == id_login)
         .all()
     )
-    # Luôn trả về list (kể cả khi rỗng)
     return [c.__dict__ for c in classes]
