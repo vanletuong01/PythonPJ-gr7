@@ -7,10 +7,22 @@ from services.api_client import get_classes, get_dashboard_stats
 import pandas as pd
 from datetime import datetime
 
+selected_class_id = st.session_state.get("selected_class_id")
+if selected_class_id is not None:
+    classes = get_classes()
+    class_info = next((c for c in classes if c.get("ClassID") == selected_class_id), None)
+    if class_info:
+        st.info(
+            f"**Bạn đang xem dashboard của lớp:** {class_info.get('ClassName')} - {class_info.get('FullClassName')}"
+        )
+    else:
+        st.warning("Không tìm thấy thông tin lớp đã chọn!")
+else:
+    st.warning("Bạn chưa chọn lớp. Vui lòng vào lớp từ trang 'Vào lớp'.")
+
 st.set_page_config(
     page_title="Dashboard - VAA", 
     layout="wide", 
-    page_icon="📊",
     initial_sidebar_state="expanded"
 )
 
@@ -40,14 +52,14 @@ with st.sidebar:
         with col_info:
             teacher_name = st.session_state.get("teacher", {}).get("name", "Giáo viên")
             st.markdown(f"**{teacher_name}**")
-            st.caption("👨‍🏫 Giảng viên")
+            st.caption("Giảng viên")
     
     st.divider()
     st.markdown("**Điểm Danh**")
     st.divider()
     
     current_time = datetime.now().strftime("%H:%M:%S T%u,%d/%m/%Y")
-    st.markdown(f"**🕐 {current_time}**")
+    st.markdown(f"**{current_time}**")
     
     st.divider()
     
@@ -59,7 +71,7 @@ with st.sidebar:
 col_left, col_right = st.columns([2.5, 1.5])
 
 with col_left:
-    st.markdown("### 📊 Sơ đồ chuyên cần của lớp")
+    st.markdown("###Sơ đồ chuyên cần của lớp")
     
     stats = get_dashboard_stats()
     attendance_data = stats.get("attendance_by_month", [])
@@ -71,9 +83,9 @@ with col_left:
         
         col_stat1, col_stat2 = st.columns(2)
         with col_stat1:
-            st.metric("📚 Tổng số lớp", stats.get('total_classes', 0))
+            st.metric("Tổng số lớp", stats.get('total_classes', 0))
         with col_stat2:
-            st.metric("👥 Tổng sinh viên", stats.get('total_students', 0))
+            st.metric("Tổng sinh viên", stats.get('total_students', 0))
     else:
         mock_data = pd.DataFrame({
             "Tháng": ["Ngày bắt đầu", "Nov 2021", "Dec 2021", "Jan 2022", "Ngày kết thúc"],
@@ -83,7 +95,7 @@ with col_left:
     
     st.divider()
     
-    st.markdown("### 📉 Sơ đồ sinh viên vắng mặt trên 1 buổi")
+    st.markdown("###Sơ đồ sinh viên vắng mặt trên 1 buổi")
     absent_data = pd.DataFrame({
         "Loại": ["Mssv", "Mssv"],
         "Số lượng": [2, 1]
@@ -91,7 +103,7 @@ with col_left:
     st.bar_chart(absent_data.set_index("Loại"), height=200)
 
 with col_right:
-    st.markdown("### 📋 Danh sách lớp")
+    st.markdown("###Danh sách lớp")
     
     filter_siso = st.text_input("Sĩ số:", placeholder="VD: 30", label_visibility="collapsed")
     st.caption("**Sĩ số:**")
@@ -117,7 +129,7 @@ with col_right:
             ])
             st.dataframe(df, use_container_width=True, hide_index=True, height=350)
         else:
-            st.warning("⚠️ Không tìm thấy lớp nào")
+            st.warning("Không tìm thấy lớp nào")
     else:
         mock_df = pd.DataFrame([
             {"STT": 1, "HỌ TÊN": "Nguyễn Văn A", "MSSV": "2331540061"},
@@ -130,4 +142,4 @@ with col_right:
     st.divider()
     
     if st.button("Thêm sinh viên", use_container_width=True, type="primary"):
-        st.info("🔜 Chức năng đang phát triển")
+        st.info("Chức năng đang phát triển")
