@@ -1,0 +1,410 @@
+/* ========== GLOBAL STYLES ========== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ========== HEADER OVERRIDE ========== */
+[data-testid="stHeader"] {
+    background: linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%) !important;
+    position: fixed !important;
+    top: 0 !important;
+    width: 100% !important;
+    z-index: 999 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Header inputs styling */
+[data-testid="stHeader"] input {
+    background: white !important;
+    border-radius: 4px !important;
+    border: 1px solid #e5e7eb !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 14px !important;
+}
+
+[data-testid="stHeader"] input::placeholder {
+    color: #9ca3af !important;
+}
+
+/* ========== SIDEBAR OVERRIDE ========== */
+[data-testid="stSidebar"] {
+    background: white !important;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+}
+
+[data-testid="stSidebar"]>div:first-child {
+    padding-top: 1.5rem;
+}
+
+/* Sidebar buttons */
+[data-testid="stSidebar"] button {
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s !important;
+}
+
+[data-testid="stSidebar"] button:hover {
+    transform: translateX(4px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* ========== MAIN CONTENT ========== */
+.main .block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    max-width: 1000px;
+}
+
+/* Page title */
+.page-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.page-subtitle {
+    color: #6b7280;
+    font-size: 14px;
+    margin-bottom: 2rem;
+}
+
+.page-subtitle a {
+    color: #3b82f6;
+    text-decoration: none;
+}
+
+.page-subtitle a:hover {
+    text-decoration: underline;
+}
+
+/* ========== FORM CARD ========== */
+.form-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+    margin-bottom: 1rem;
+}
+
+/* ========== FORM INPUTS ========== */
+input[type="text"],
+input[type="date"],
+input[type="tel"],
+select,
+textarea {
+    width: 100% !important;
+    padding: 0.625rem 0.875rem !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+    transition: all 0.2s !important;
+    background: white !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+}
+
+input::placeholder {
+    color: #9ca3af !important;
+}
+
+/* Input labels */
+label {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: #374151 !important;
+    margin-bottom: 0.5rem !important;
+    display: block !important;
+}
+
+/* ========== GRID LAYOUT ========== */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-row-single {
+    margin-bottom: 1.5rem;
+}
+
+/* ========== RADIO BUTTONS (GENDER) ========== */
+[role="radiogroup"] {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+}
+
+[role="radiogroup"] label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem !important;
+    border: 1.5px solid #d1d5db !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    background: white !important;
+    font-weight: 500 !important;
+}
+
+[role="radiogroup"] label:hover {
+    border-color: #3b82f6 !important;
+    background: #eff6ff !important;
+}
+
+[role="radiogroup"] input:checked+div {
+    border-color: #3b82f6 !important;
+    background: #3b82f6 !important;
+    color: white !important;
+}
+
+/* ========== DROPDOWN (SELECT) ========== */
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    padding-right: 2.5rem !important;
+    cursor: pointer;
+}
+
+/* ========== SAVE BUTTON ========== */
+button[kind="primary"] {
+    width: 100% !important;
+    background: #374151 !important;
+    color: white !important;
+    font-weight: 600 !important;
+    padding: 0.875rem 1.5rem !important;
+    border-radius: 6px !important;
+    border: none !important;
+    font-size: 15px !important;
+    cursor: pointer !important;
+    transition: all 0.2s !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+button[kind="primary"]:hover {
+    background: #1f2937 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+button[kind="primary"]:active {
+    transform: translateY(0);
+}
+
+/* ========== TAB BUTTONS ========== */
+.tab-container {
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.tab-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 1rem;
+}
+
+.stButton button {
+    padding: 0.625rem 1.25rem !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    border-radius: 6px !important;
+    transition: all 0.2s !important;
+}
+
+/* Tab button variants */
+button[kind="secondary"] {
+    background: #f3f4f6 !important;
+    color: #374151 !important;
+    border: 1px solid #d1d5db !important;
+}
+
+button[kind="secondary"]:hover {
+    background: #e5e7eb !important;
+    border-color: #9ca3af !important;
+}
+
+/* Special tab buttons */
+.tab-none button {
+    background: #fef2f2 !important;
+    color: #991b1b !important;
+    border: 1px solid #fecaca !important;
+}
+
+.tab-capture button {
+    background: #fff7ed !important;
+    color: #9a3412 !important;
+    border: 1px solid #fed7aa !important;
+}
+
+.tab-training button {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+    border: 1px solid #fde68a !important;
+}
+
+/* ========== DIVIDER ========== */
+hr {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 1.5rem 0;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .form-card {
+        padding: 1.5rem;
+    }
+
+    [role="radiogroup"] {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+/* ========== SUCCESS MESSAGE ========== */
+.stSuccess {
+    background: #d1fae5 !important;
+    border-left: 4px solid #10b981 !important;
+    padding: 1rem !important;
+    border-radius: 6px !important;
+}
+
+/* ========== ANIMATIONS ========== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.form-card {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* ========== PILLS (FILTER / ACTION) ========== */
+.pill {
+    padding: .55rem 1rem;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    cursor: pointer;
+    user-select: none;
+    transition: .2s;
+}
+
+.pill:hover {
+    background: #e5e7eb;
+}
+
+.pill-neutral {
+    background: #ffffff;
+}
+
+.pill-danger {
+    background: #fce7e7;
+    color: #7f1d1d;
+    border-color: #f8c5c5;
+}
+
+.pill-danger:hover {
+    background: #f8c5c5;
+}
+
+.pill-active {
+    box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.15);
+}
+
+/* Toggle action buttons */
+button[kind][disabled][data-baseweb] {
+    background: #f8d2d2 !important;
+    color: #7f1d1d !important;
+    border: 1px solid #e9b4b4 !important;
+}
+
+.css-1emrehy {
+    /* optional class may vary per Streamlit version */
+}
+
+.stButton>button {
+    border-radius: 24px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    padding: .55rem 1rem !important;
+    border: 1px solid #e5e7eb !important;
+    background: #ffffff !important;
+    color: #111827 !important;
+}
+
+.stButton>button:hover:enabled {
+    background: #f3f4f6 !important;
+}
+
+/* Top search pill */
+[data-testid="stTextInput"] input {
+    border-radius: 9999px !important;
+    padding: 0.5rem 1rem !important;
+    border: 1px solid #d1d5db !important;
+}
+
+/* Button disabled (hồng) */
+.stButton button:disabled {
+    background: #f6c1c5 !important;
+    color: #7f1d1d !important;
+    border: 1px solid #e9b4b4 !important;
+    border-radius: 20px !important;
+}
+
+/* Pink button (custom HTML) */
+.btn-pink {
+    background: #f8b4b8 !important;
+    color: #7f1d1d !important;
+    border: 1px solid #e9b4b4 !important;
+    border-radius: 20px !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    cursor: default !important;
+    width: 100%;
+}
+
+/* Search results card */
+.search-results {
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}

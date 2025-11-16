@@ -6,7 +6,7 @@ if not st.session_state.get("logged_in", False) or not st.session_state.get("tea
     st.warning("Bạn cần đăng nhập để vào lớp.")
     st.switch_page("app.py")
     st.stop()
-    
+
 st.set_page_config(page_title="Vào lớp", layout="wide")
 
 # Sidebar trái
@@ -110,10 +110,9 @@ with col_right:
 
     # Nút vào lớp
     if class_info and st.button("START", use_container_width=True):
+        st.session_state["selected_class_id"] = class_info["ClassID"]
         st.success(f"Bạn đã vào lớp {class_info['ClassName']} thành công!")
-        # Thực hiện chuyển trang hoặc lưu trạng thái vào lớp tại đây
-
-    # Thông báo phụ
+        st.switch_page("pages/dashboard.py")        
     st.markdown(
         '<div style="margin-top:10px;font-size:14px;color:#666">Bạn không tìm thấy lớp của mình? <a href="/add_class" style="color:#d00;font-weight:600">Tại đây</a>.</div>',
         unsafe_allow_html=True

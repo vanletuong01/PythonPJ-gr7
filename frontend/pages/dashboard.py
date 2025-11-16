@@ -142,4 +142,8 @@ with col_right:
     st.divider()
     
     if st.button("Thêm sinh viên", use_container_width=True, type="primary"):
+<<<<<<< HEAD
         st.info("Chức năng đang phát triển")
+=======
+        st.switch_page("pages/add_student.py")
+>>>>>>> 61afdbc00f2cffc349b65bdabd9c94ff9efead4c
