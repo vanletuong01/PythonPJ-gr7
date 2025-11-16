@@ -18,7 +18,7 @@ def render_dashboard_sidebar():
         st.divider()
         
         # Menu navigation
-        st.markdown("###Menu")
+        st.markdown("### Menu")
         
         if st.button("Dashboard", use_container_width=True):
             st.switch_page("pages/dashboard.py")
@@ -26,8 +26,12 @@ def render_dashboard_sidebar():
         if st.button("Thêm lớp học", use_container_width=True):
             st.switch_page("pages/add_class.py")
         
-        if st.button("Điểm danh", use_container_width=True):
-            st.info("Chức năng đang phát triển")
+        if st.button("👨‍🎓 Thêm sinh viên", use_container_width=True):
+            st.switch_page("pages/add_student.py")
+        
+        # ---- FIXED: Điểm danh ----
+        if st.button("📊 Điểm danh", use_container_width=True):
+            st.switch_page("pages/diem_danh.py")   # Hoặc để st.info nếu chưa code
         
         st.divider()
         

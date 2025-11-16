@@ -1,86 +1,126 @@
-import os
 import requests
+from requests import Response
 
-API_BASE = os.getenv("API_BASE", "http://127.0.0.1:5000/api/v1")
-TIMEOUT = int(os.getenv("API_TIMEOUT", "20"))
+API_BASE = "http://127.0.0.1:8000/api/v1"
 
-def _safe_json(resp):
+
+# -----------------------
+# Helper xử lý request
+# -----------------------
+def handle_response(res: Response):
     try:
-        return resp.json()
-    except:
-        return {"success": False, "message": resp.text or f"HTTP {resp.status_code}"}
+        res.raise_for_status()
+        return res.json()
+    except requests.HTTPError as e:
+        print(f"❌ API Error {res.status_code}: {res.text}")
+        raise e
 
-def register_teacher(email: str, password: str, name: str):
-    url = f"{API_BASE}/auth/register"
-    payload = {"email": email, "password": password, "name": name}
-    try:
-        resp = requests.post(url, json=payload, timeout=TIMEOUT)
-        data = _safe_json(resp)
-        data.setdefault("status", resp.status_code)
-        data.setdefault("url", url)
-        return data
-    except Exception as e:
-        return {"success": False, "message": str(e), "status": 0}
 
-def login_teacher(email: str, password: str):
-    url = f"{API_BASE}/auth/login"
-    payload = {"email": email, "password": password}
-    try:
-        resp = requests.post(url, json=payload, timeout=TIMEOUT)
-        data = _safe_json(resp)
-        data.setdefault("status", resp.status_code)
-        return data
-    except Exception as e:
-        return {"success": False, "message": str(e)}
+# -----------------------
+# STUDENT API
+# -----------------------
+def get_students():
+    url = f"{API_BASE}/student/"
+    res = requests.get(url, timeout=10)
+    return handle_response(res)
 
-def get_majors():
-    try:
-        resp = requests.get(f"{API_BASE}/class/majors", timeout=TIMEOUT)
-        return resp.json() if resp.status_code == 200 else []
-    except:
-        return []
 
-def get_types():
-    try:
-        resp = requests.get(f"{API_BASE}/class/types", timeout=TIMEOUT)
-        return resp.json() if resp.status_code == 200 else []
-    except:
-        return []
+def search_students(keyword: str, limit: int = 30):
+    url = f"{API_BASE}/student/search"
+    params = {"q": keyword, "limit": limit}
+    res = requests.get(url, params=params, timeout=10)
+    return handle_response(res)
 
-def get_shifts():
-    try:
-        resp = requests.get(f"{API_BASE}/class/shifts", timeout=TIMEOUT)
-        return resp.json() if resp.status_code == 200 else []
-    except:
-        return []
 
+def get_student_by_id(student_id: int):
+    url = f"{API_BASE}/student/{student_id}"
+    res = requests.get(url, timeout=10)
+    return handle_response(res)
+
+
+def create_student(data: dict):
+    url = f"{API_BASE}/student/"
+    res = requests.post(url, json=data, timeout=10)
+    return handle_response(res)
+
+
+def update_student(student_id: int, data: dict):
+    url = f"{API_BASE}/student/{student_id}"
+    res = requests.put(url, json=data, timeout=10)
+    return handle_response(res)
+
+
+def delete_student(student_id: int):
+    url = f"{API_BASE}/student/{student_id}"
+    res = requests.delete(url, timeout=10)
+    return handle_response(res)
+
+
+# -----------------------
+# CLASS API
+# -----------------------
 def get_classes():
-    try:
-        resp = requests.get(f"{API_BASE}/class/list", timeout=TIMEOUT)
-        return resp.json() if resp.status_code == 200 else []
-    except:
-        return []
+    url = f"{API_BASE}/class/"
+    res = requests.get(url, timeout=10)
+    return handle_response(res)
 
-def get_dashboard_stats():
-    try:
-        resp = requests.get(f"{API_BASE}/class/dashboard/stats", timeout=TIMEOUT)
-        return resp.json() if resp.status_code == 200 else {}
-    except:
-        return {}
 
 def create_class(data: dict):
-    url = f"{API_BASE}/class/create"
-    print(f"[DEBUG] create_class calling {url}")
+    url = f"{API_BASE}/class/"
+    res = requests.post(url, json=data, timeout=10)
+    return handle_response(res)
+
+
+# -----------------------
+# SUBJECT API
+# -----------------------
+def get_subjects():
+    url = f"{API_BASE}/subject/"
+    res = requests.get(url, timeout=10)
+    return handle_response(res)
+
+
+def create_subject(data: dict):
+    url = f"{API_BASE}/subject/"
+    res = requests.post(url, json=data, timeout=10)
+    return handle_response(res)
+
+# -----------------------
+# MAJOR API (ngành học)
+# -----------------------
+def get_majors():
+    url = f"{API_BASE}/major/"
+    res = requests.get(url, timeout=10)
+    return handle_response(res)
+
+
+# -----------------------
+# TYPE API (loại sinh viên hoặc loại đối tượng)
+# -----------------------
+def get_types():
+    url = f"{API_BASE}/type/"
+    res = requests.get(url, timeout=10)
+    return handle_response(res)
+def login_teacher(email: str, password: str):
+    url = f"{API_BASE}/auth/login"
+    payload = {
+        "email": email,
+        "password": password
+    }
+    res = requests.post(url, json=payload, timeout=10)
+    return handle_response(res)
+
+
+# -----------------------
+# DASHBOARD API
+# -----------------------
+def get_dashboard_stats():
+    url = f"{API_BASE}/dashboard/stats"
     try:
-        resp = requests.post(url, json=data, timeout=TIMEOUT)
-        return resp
-    except requests.exceptions.ConnectionError as e:
-        print(f"[ERROR] ConnectionError: {e}")
-        class MockResp:
-            status_code = 0
-            text = "Không kết nối được backend"
-        return MockResp()
+        res = requests.get(url, timeout=10)
+        return handle_response(res)
     except Exception as e:
+<<<<<<< HEAD
         print(f"[ERROR] create_class: {e!r}")
         class MockResp:
             status_code = 0
@@ -116,3 +156,7 @@ def get_attendance_by_date(class_id):
         return resp.json() if resp.status_code == 200 else []
     except:
         return []
+=======
+        print("❌ Lỗi get_dashboard_stats:", e)
+        return {}
+>>>>>>> e660665db4b78d84c712b369d61b71444ed75c46
