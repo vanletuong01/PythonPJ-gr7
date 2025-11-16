@@ -101,3 +101,24 @@ def get_types():
     url = f"{API_BASE}/type/"
     res = requests.get(url, timeout=10)
     return handle_response(res)
+def login_teacher(email: str, password: str):
+    url = f"{API_BASE}/auth/login"
+    payload = {
+        "email": email,
+        "password": password
+    }
+    res = requests.post(url, json=payload, timeout=10)
+    return handle_response(res)
+
+
+# -----------------------
+# DASHBOARD API
+# -----------------------
+def get_dashboard_stats():
+    url = f"{API_BASE}/dashboard/stats"
+    try:
+        res = requests.get(url, timeout=10)
+        return handle_response(res)
+    except Exception as e:
+        print("❌ Lỗi get_dashboard_stats:", e)
+        return {}

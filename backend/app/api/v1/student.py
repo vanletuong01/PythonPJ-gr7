@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from backend.app.database import get_db
-from backend.app.services.student_service import search_students, create_student
+from backend.app.services.student_service import search_students
 from backend.app.schemas.student_schemas import StudentCreate
 
 router = APIRouter(tags=["Student"])
