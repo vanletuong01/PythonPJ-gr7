@@ -10,6 +10,9 @@ from backend.app.models.type import Type
 from backend.app.models.shift import Shift
 from backend.app.models.class_model import Class
 from backend.app.models.teach import Teach
+from backend.app.models.study import Study
+from backend.app.models.student import Student
+from backend.app.models.attendance import Attendance
 
 router = APIRouter()
 
@@ -86,3 +89,26 @@ def get_classes_by_teacher(id_login: int, db: Session = Depends(get_db)):
     )
     # Luôn trả về list (kể cả khi rỗng)
     return [c.__dict__ for c in classes]
+
+@router.get("/students_in_class/{class_id}")
+def get_students_in_class(class_id: int, db: Session = Depends(get_db)):
+    students = (
+        db.query(Student.FullName, Student.StudentCode)
+        .join(Study, Student.StudentID == Study.StudentID)
+        .filter(Study.ClassID == class_id)
+        .order_by(Student.FullName)
+        .all()
+    )
+    return [{"FullName": s[0], "StudentCode": s[1]} for s in students]
+
+@router.get("/attendance_by_date/{class_id}")
+def attendance_by_date(class_id: int, db: Session = Depends(get_db)):
+    result = (
+        db.query(Attendance.Date, func.count(Study.StudentID).label("present"))
+        .join(Study, Attendance.StudyID == Study.StudyID)
+        .filter(Study.ClassID == class_id)
+        .group_by(Attendance.Date)
+        .order_by(Attendance.Date)
+        .all()
+    )
+    return [{"date": r[0], "present": r[1]} for r in result]

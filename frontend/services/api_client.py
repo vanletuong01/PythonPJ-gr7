@@ -95,3 +95,24 @@ def get_classes_by_teacher(id_login):
         return []
     except Exception:
         return []
+    
+def get_students_in_class(class_id):
+    try:
+        resp = requests.get(f"{API_BASE}/class/students_in_class/{class_id}", timeout=TIMEOUT)
+        return resp.json() if resp.status_code == 200 else []
+    except:
+        return []
+
+def get_attendance_by_date(class_id):
+    try:
+        resp = requests.get(f"{API_BASE}/class/attendance_by_date/{class_id}", timeout=TIMEOUT)
+        return resp.json() if resp.status_code == 200 else []
+    except:
+        return []
+    
+def get_attendance_by_date(class_id):
+    try:
+        resp = requests.get(f"{API_BASE}/class/attendance_by_date/{class_id}", timeout=TIMEOUT)
+        return resp.json() if resp.status_code == 200 else []
+    except:
+        return []

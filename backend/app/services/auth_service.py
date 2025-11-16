@@ -1,9 +1,8 @@
 import time
-from passlib.hash import pbkdf2_sha256
+from passlib.hash import bcrypt
 from jose import jwt
 from datetime import datetime, timedelta
 from backend.config import SECRET_KEY, ALGORITHM
-
 from passlib.context import CryptContext
 from jose import jwt
 from datetime import datetime, timedelta

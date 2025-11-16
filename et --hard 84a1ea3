@@ -1,0 +1,18 @@
+[33me660665[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mtzan3[m[33m, [m[1;31morigin/tzan3[m[33m)[m Merge tzan2 into tzan3
+[33m84a1ea3[m Lưu thay đổi dashboard.py trước khi pull
+[33m61afdbc[m[33m ([m[1;31morigin/tzan2[m[33m)[m fix: Sửa API sinh viên - thêm create_student, ClassID schema, routes
+[33md905f2c[m Sửa lỗi và cập nhật API cho sinh viên
+[33m986d3aa[m Resolve merge conflicts (local only)
+[33m1e26c1d[m feat: Add student page with header and sidebar integration
+[33m49ba72b[m Nội dung commit của bạn
+[33mc615735[m[33m ([m[1;32mtzan2[m[33m)[m feat: Complete dashboard with fixed header, filters, and sidebar
+[33mee099e4[m Khôi phục backend từ origin/tzan2 (giữ nguyên frontend hiện tại)
+[33mfa1adc4[m deploy lên ngrok
+[33m4e9ba20[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m Sửa lại addclass lần thứ 3
+[33m921d491[m sửa thêm lớp lưu db lần thứ 2
+[33me398cd1[m Merge branch 'tzan' into main
+[33mfcef4c1[m ..
+[33me2db0c6[m Khúc này tạo được backend cho Thêm lớp
+[33m03eb545[m login/register
+[33mc77990f[m Add image file
+[33m3aa718f[m first commit

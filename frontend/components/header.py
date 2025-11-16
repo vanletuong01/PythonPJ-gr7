@@ -1,21 +1,10 @@
-"""
-Header Component - Fixed gradient bar with filters
-"""
 import streamlit as st
 from pathlib import Path
 
 def render_header():
-    """
-    Header cố định ở top với:
-    - Logo to + Title
-    - 3 filters
-    - User icon
-    """
-    
     header_container = st.container()
     
     with header_container:
-        # Layout: Logo+Title(25%) | Filter1(17%) | Filter2(17%) | Filter3(17%) | Spacer(20%) | Icon(4%)
         col1, col2, col3, col4, col5, col6 = st.columns([2.5, 1.7, 1.7, 1.7, 2, 0.4])
         
         # Cột 1: Logo + Title
