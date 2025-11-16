@@ -1,7 +1,7 @@
 import os
 import requests
 
-API_BASE = os.getenv("API_BASE", "http://127.0.0.1:5000/api/v1")
+API_BASE = os.getenv("API_BASE", "http://127.0.0.1:8000/api/v1")
 TIMEOUT = int(os.getenv("API_TIMEOUT", "20"))
 
 def _safe_json(resp):
@@ -109,10 +109,22 @@ def get_attendance_by_date(class_id):
         return resp.json() if resp.status_code == 200 else []
     except:
         return []
-    
-def get_attendance_by_date(class_id):
+
+def handle_response(res):
     try:
-        resp = requests.get(f"{API_BASE}/class/attendance_by_date/{class_id}", timeout=TIMEOUT)
-        return resp.json() if resp.status_code == 200 else []
-    except:
-        return []
+        res.raise_for_status()
+        return res.json()
+    except requests.HTTPError as e:
+        print(f"API Error {res.status_code}: {res.text}")
+        raise e
+
+def create_student(data: dict):
+    url = f"{API_BASE}/student/"
+    res = requests.post(url, json=data, timeout=TIMEOUT)
+    return handle_response(res)
+
+def search_students(keyword: str, limit: int = 30):
+    url = f"{API_BASE}/student/search"
+    params = {"q": keyword, "limit": limit}
+    res = requests.get(url, params=params, timeout=TIMEOUT)
+    return handle_response(res)

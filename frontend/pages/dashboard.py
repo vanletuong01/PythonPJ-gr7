@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 sys.path.append(str(Path(__file__).parent.parent))
 from components.header import render_header
-from services.api_client import get_classes, get_dashboard_stats, get_students_in_class
+from services.api_client import get_classes, get_dashboard_stats, get_students_in_class, get_attendance_by_date
 import pandas as pd
 from datetime import datetime
 
@@ -41,10 +41,6 @@ filter_lop, filter_mon, filter_ma_mon = render_header()
 
 col_left, col_right = st.columns([2.5, 1.5])
 
-# ...existing code...
-from services.api_client import get_classes, get_dashboard_stats, get_students_in_class, get_attendance_by_date
-# ...existing code...
-
 with col_left:
     st.markdown("Sơ đồ chuyên cần của lớp")
 
@@ -81,4 +77,4 @@ with col_right:
 
     st.divider()
     if st.button("Thêm sinh viên", use_container_width=True, type="primary"):
-        st.info("Chức năng đang phát triển") 
+        st.switch_page("pages/add_student.py")

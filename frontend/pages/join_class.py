@@ -6,7 +6,7 @@ if not st.session_state.get("logged_in", False) or not st.session_state.get("tea
     st.warning("Bạn cần đăng nhập để vào lớp.")
     st.switch_page("app.py")
     st.stop()
-    
+
 st.set_page_config(page_title="Vào lớp", layout="wide")
 
 # Sidebar trái
