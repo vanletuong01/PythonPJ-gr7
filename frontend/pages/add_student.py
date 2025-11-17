@@ -93,6 +93,24 @@ st.markdown('</div>', unsafe_allow_html=True)
 # Status buttons
 st.markdown("### Trạng thái ảnh:")
 sb1, sb2, sb3 = st.columns(3)
-with sb1: st.button("NONE", key="s_none")
-with sb2: st.button("Lấy ảnh sinh viên", key="s_capture")
-with sb3: st.button("Training data", key="s_train")
+with sb1: 
+    st.button("NONE", key="s_none")
+with sb2: 
+    if st.button("Lấy ảnh sinh viên", key="s_capture"):
+        current_mssv = (mssv or "").strip()
+        current_name = (fullname or "").strip()
+        if not current_mssv:
+            st.error("⚠ Vui lòng nhập MSSV trước khi chụp ảnh")
+        elif not current_name:
+            st.error("⚠ Vui lòng nhập Họ tên trước khi chụp ảnh")
+        else:
+            st.session_state["capture_mssv"] = current_mssv
+            st.session_state["capture_name"] = current_name
+            try:
+                st.query_params["code"] = current_mssv
+                st.query_params["name"] = current_name
+            except:
+                st.experimental_set_query_params(code=current_mssv, name=current_name)
+            st.switch_page("pages/capture_photo.py")
+with sb3: 
+    st.button("Training data", key="s_train")

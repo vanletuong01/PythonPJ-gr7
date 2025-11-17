@@ -4,14 +4,15 @@ from backend.app.models.student import Student
 from backend.app.models.study import Study
 
 def search_students(db: Session, q: str, limit: int = 30):
-    if not q or len(q.strip()) < 2:
+    q = (q or "").strip()
+    if len(q) < 2:
         return {"success": True, "data": []}
 
     like = f"%{q}%"
 
     rows = (
         db.query(Student, Study.ClassID)
-        .join(Study, Study.StudentID == Student.StudentID, isouter=True)
+        .outerjoin(Study, Study.StudentID == Student.StudentID)
         .filter(
             or_(
                 Student.FullName.ilike(like),
@@ -22,15 +23,13 @@ def search_students(db: Session, q: str, limit: int = 30):
         .all()
     )
 
-    return {
-        "success": True,
-        "data": [
-            {
-                "StudentCode": r.Student.StudentCode,
-                "FullName": r.Student.FullName,
-                "ClassID": r.ClassID,      # <-- ClassID từ Study
-                "Phone": r.Student.Phone
-            }
-            for r in rows
-        ]
-    }
+    data = []
+    for s, class_id in rows:
+        data.append({
+            "StudentCode": s.StudentCode,
+            "FullName": s.FullName,
+            "ClassID": class_id or "",
+            "Phone": s.Phone or ""
+        })
+
+    return {"success": True, "data": data}

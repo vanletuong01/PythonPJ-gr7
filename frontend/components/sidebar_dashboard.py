@@ -30,8 +30,8 @@ def render_dashboard_sidebar():
             st.switch_page("pages/add_student.py")
         
         # ---- FIXED: Điểm danh ----
-        if st.button("📊 Điểm danh", use_container_width=True):
-            st.switch_page("pages/diem_danh.py")   # Hoặc để st.info nếu chưa code
+        if st.sidebar.button("✅ Điểm danh", use_container_width=True):
+            st.switch_page("pages/attendance.py")   # Hoặc để st.info nếu chưa code
         
         st.divider()
         

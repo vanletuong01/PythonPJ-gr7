@@ -8,3 +8,4 @@ class Attendance(Base):
     Date = Column(Date, nullable=False)
     Time = Column(Time, nullable=False)
     PhotoPath = Column(String(255))
+    

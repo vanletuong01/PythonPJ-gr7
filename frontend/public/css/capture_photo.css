@@ -1,0 +1,763 @@
+/* ===== RESET ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Hide Streamlit defaults */
+#MainMenu,
+footer,
+header,
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"],
+[data-testid="stSidebar"] {
+    display: none !important;
+}
+
+.block-container,
+.main {
+    padding: 0 !important;
+    max-width: 100% !important;
+}
+
+[data-testid="stAppViewContainer"] {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    min-height: 100vh;
+}
+
+/* ===== CONTAINER ===== */
+.capture-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* ===== HEADER */
+.capture-header {
+    background: #fff;
+    padding: 1.2rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .08)
+}
+
+.logo-box {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 8px
+}
+
+.header-text {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1f2937
+}
+
+.header-center {
+    display: flex;
+    gap: 2rem
+}
+
+.info-label {
+    font-size: 16px;
+    font-weight: 500;
+    color: #6b7280
+}
+
+.info-label span {
+    font-weight: 700;
+    color: #1f2937
+}
+
+.user-icon {
+    width: 45px;
+    height: 45px;
+    background: #f3f4f6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px
+}
+
+/* ===== TITLE ===== */
+.stTitle {
+    text-align: center !important;
+    color: white !important;
+    font-size: 32px !important;
+    font-weight: 700 !important;
+    margin-bottom: 1rem !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* ===== STUDENT INFO BOX ===== */
+.student-info-box {
+    background: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 auto 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 500px;
+}
+
+.student-info-box strong {
+    color: #667eea;
+}
+
+/* ===== PROGRESS SECTION ===== */
+.stAlert {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 12px 20px !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    text-align: center !important;
+    margin-bottom: 1rem !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.stProgress>div>div {
+    background: linear-gradient(90deg, #667eea, #764ba2) !important;
+    border-radius: 10px !important;
+    height: 12px !important;
+}
+
+.stProgress {
+    margin-bottom: 1.5rem !important;
+}
+
+/* ===== BUTTONS ===== */
+[data-testid="column"] {
+    padding: 0 0.5rem !important;
+}
+
+.stButton button {
+    width: 100% !important;
+    background: white !important;
+    color: #667eea !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 0.9rem 1.5rem !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    transition: all 0.3s ease !important;
+    cursor: pointer !important;
+}
+
+.stButton button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+    color: white !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2) !important;
+}
+
+.stButton button:disabled {
+    background: rgba(255, 255, 255, 0.5) !important;
+    color: rgba(0, 0, 0, 0.3) !important;
+    cursor: not-allowed !important;
+    box-shadow: none !important;
+}
+
+/* Primary button (Bắt đầu, Gửi) */
+.stButton button[kind="primary"],
+.stButton button[data-baseweb="button"][kind="primary"] {
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+    color: white !important;
+}
+
+.stButton button[kind="primary"]:hover:not(:disabled) {
+    background: linear-gradient(135deg, #5568d3, #6a4191) !important;
+}
+
+/* ===== CAMERA COMPONENT ===== */
+iframe[title="webcam_component.webcam_component"] {
+    border: none !important;
+    border-radius: 16px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+    margin: 1.5rem 0 !important;
+    background: white !important;
+}
+
+/* ===== CAMERA COMPONENT (BẮT BUỘC HIỆN) ===== */
+iframe[title="components.capture_component.webcam_component"],
+iframe[src*="webcam_component"] {
+    display: block !important;
+    width: 100% !important;
+    min-height: 600px !important;
+    /* ← BẮT BUỘC chiều cao */
+    max-width: 800px !important;
+    margin: 2rem auto !important;
+    border: 3px solid white !important;
+    border-radius: 16px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+    background: white !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Đảm bảo container của iframe cũng hiện */
+div[data-testid="stIFrame"],
+div[data-testid="element-container"]:has(iframe) {
+    display: block !important;
+    width: 100% !important;
+    min-height: 600px !important;
+    margin: 0 auto !important;
+}
+
+/* ===== IMAGE GRID ===== */
+.stImage {
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+    transition: transform 0.2s ease !important;
+}
+
+.stImage:hover {
+    transform: scale(1.05) !important;
+}
+
+/* Grid caption */
+.stImage+div {
+    text-align: center !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: white !important;
+    margin-top: 0.5rem !important;
+}
+
+/* ===== DIVIDER ===== */
+hr {
+    border: none !important;
+    height: 2px !important;
+    background: rgba(255, 255, 255, 0.3) !important;
+    margin: 2rem 0 !important;
+}
+
+/* ===== MARKDOWN TITLES ===== */
+.stMarkdown h3 {
+    color: white !important;
+    font-size: 24px !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    margin-bottom: 1.5rem !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== SPINNER ===== */
+.stSpinner>div {
+    border-color: white transparent transparent transparent !important;
+}
+
+/* ===== SUCCESS MESSAGE ===== */
+.stSuccess {
+    background: white !important;
+    color: #10b981 !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 16px 24px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ===== ERROR MESSAGE ===== */
+.stError {
+    background: white !important;
+    color: #ef4444 !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 16px 24px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ===== INFO MESSAGE ===== */
+.stInfo {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #3b82f6 !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 12px 20px !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .capture-container {
+        padding: 1rem;
+    }
+
+    .stTitle {
+        font-size: 24px !important;
+    }
+
+    .student-info-box {
+        font-size: 14px !important;
+        padding: 10px 16px !important;
+    }
+
+    .stButton button {
+        font-size: 14px !important;
+        padding: 0.7rem 1rem !important;
+    }
+}
+
+/* ===== ANIMATION ===== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stAlert,
+.student-info-box,
+.stButton button {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* RESET / HIDE DEFAULT */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box
+}
+
+#MainMenu,
+footer,
+header,
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"],
+[data-testid="stSidebar"] {
+    display: none !important
+}
+
+.block-container,
+.main {
+    padding: 0 !important;
+    max-width: 100% !important
+}
+
+[data-testid="stAppViewContainer"] {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important
+}
+
+/* HEADER */
+.capture-header {
+    background: #fff;
+    padding: 1.2rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .08)
+}
+
+.logo-box {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 8px
+}
+
+.header-text {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1f2937
+}
+
+.header-center {
+    display: flex;
+    gap: 2rem
+}
+
+.info-label {
+    font-size: 16px;
+    font-weight: 500;
+    color: #6b7280
+}
+
+.info-label span {
+    font-weight: 700;
+    color: #1f2937
+}
+
+.user-icon {
+    width: 45px;
+    height: 45px;
+    background: #f3f4f6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px
+}
+
+/* TITLE / COUNTER */
+.capture-title {
+    text-align: center;
+    font-size: 34px;
+    font-weight: 700;
+    color: #fff;
+    padding: 1.25rem 0 .75rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, .25)
+}
+
+.capture-counter {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 600;
+    color: #fff;
+    background: rgba(255, 255, 255, .18);
+    backdrop-filter: blur(8px);
+    padding: .75rem 2rem;
+    margin: 0 auto 1.2rem;
+    border-radius: 40px;
+    max-width: 260px
+}
+
+/* BUTTONS */
+.button-controls {
+    max-width: 1300px;
+    margin: 0 auto 1.2rem;
+    padding: 0 2rem
+}
+
+.stButton button {
+    background: #fff !important;
+    color: #667eea !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: .9rem 1.6rem !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .15) !important;
+    transition: .25s
+}
+
+.stButton button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+    color: #fff !important;
+    transform: translateY(-3px)
+}
+
+.stButton button:disabled {
+    background: rgba(255, 255, 255, .35) !important;
+    color: rgba(255, 255, 255, .55) !important;
+    box-shadow: none !important
+}
+
+/* Primary button (Bắt đầu, Gửi) */
+.stButton button[kind="primary"],
+.stButton button[data-baseweb="button"][kind="primary"] {
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+    color: #fff !important;
+}
+
+.stButton button[kind="primary"]:hover:not(:disabled) {
+    background: linear-gradient(135deg, #5568d3, #6a4191) !important;
+}
+
+/* CAMERA BOX */
+.camera-box {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 2rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem
+}
+
+/* PREVIEW LAYOUT */
+.preview-wrapper {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 1.5rem;
+    width: 100%
+}
+
+.guide-panel {
+    background: rgba(255, 255, 255, .22);
+    padding: 1.4rem;
+    border-radius: 16px;
+    backdrop-filter: blur(6px);
+    color: #fff;
+    display: flex;
+    flex-direction: column
+}
+
+.panel-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: .9rem;
+    color: #FFD700
+}
+
+.panel-list {
+    list-style: none;
+    font-size: 16px;
+    line-height: 1.7;
+    margin: 0 0 1rem;
+    padding: 0
+}
+
+.panel-list li {
+    padding-left: .4rem
+}
+
+.panel-tip {
+    font-size: 14px;
+    opacity: .85;
+    margin-top: auto
+}
+
+.preview-panel {
+    background: #fff;
+    padding: 1rem 1.2rem;
+    border-radius: 16px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .18);
+    display: flex;
+    flex-direction: column
+}
+
+.preview-label {
+    font-weight: 600;
+    margin-bottom: .5rem;
+    color: #444
+}
+
+/* CAMERA INPUT OVERRIDE */
+[data-testid="stCameraInput"] label {
+    display: none !important
+}
+
+[data-testid="stCameraInput"]>div {
+    background: #fff !important;
+    border-radius: 14px !important;
+    padding: .5rem !important;
+    box-shadow: none !important
+}
+
+[data-testid="stCameraInput"] video,
+[data-testid="stCameraInput"] img {
+    border-radius: 10px !important;
+    object-fit: cover !important
+}
+
+/* STATUS BANNERS */
+.status-banner {
+    width: 100%;
+    border-radius: 18px;
+    padding: 2.2rem 2rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 20px;
+    color: #fff;
+    position: relative;
+    overflow: hidden
+}
+
+.status-banner.capturing {
+    background: linear-gradient(135deg, #f6d365, #fda085)
+}
+
+.status-banner.done {
+    background: linear-gradient(135deg, #84fab0, #8fd3f4)
+}
+
+.banner-line {
+    font-size: 22px;
+    margin-bottom: .6rem
+}
+
+.banner-sub {
+    font-size: 15px;
+    font-weight: 500;
+    opacity: .9
+}
+
+/* Idle box */
+.idle-box {
+    background: rgba(255, 255, 255, .18);
+    color: #fff;
+    padding: 2.2rem;
+    border-radius: 16px;
+    text-align: center;
+    font-size: 18px
+}
+
+/* Success (old) */
+.success-msg {
+    background: #fff;
+    color: #10b981;
+    padding: 2.4rem;
+    border-radius: 16px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .18)
+}
+
+/* Remove whitespace */
+.element-container,
+.stMarkdown,
+div[data-testid="column"] {
+    margin: 0 !important;
+    padding: 0 .4rem !important
+}
+
+/* Ẩn hoàn toàn các lớp waiting */
+.waiting-title,
+.waiting-sub,
+.guide-box,
+.waiting-tip {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.guide-instruction {
+    background: linear-gradient(135deg, #f6d365, #fda085);
+    color: white;
+    padding: 1.5rem 2rem;
+    border-radius: 14px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    animation: fadeIn 0.3s;
+}
+
+.guide-instruction strong {
+    font-size: 26px;
+    text-decoration: underline;
+}
+
+.success-msg {
+    background: white;
+    color: #10b981;
+    padding: 2rem;
+    border-radius: 16px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    animation: fadeIn 0.5s;
+}
+
+.idle-box {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    padding: 2rem;
+    border-radius: 16px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    animation: fadeIn 0.5s;
+}
+
+/* Student info box */
+.student-info-box {
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: #eeeeee;
+    margin-bottom: 1rem;
+    display: inline-block;
+    font-size: 15px;
+    font-weight: 500;
+}
+
+/* Heading guide */
+.guide-heading {
+    background: #f6d365;
+    background: linear-gradient(135deg, #f6d365, #fda085);
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    display: inline-block;
+    margin-bottom: 12px;
+}
+
+/* Countdown */
+.countdown {
+    font-size: 22px;
+    font-weight: 700;
+    color: #facc15;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+/* Overlay box & texts */
+.face-box {
+    border: 3px dashed #34d399;
+    width: 260px;
+    height: 340px;
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 12px;
+    pointer-events: none;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.15);
+}
+
+.guide-text {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    padding: 6px 18px;
+    border-radius: 24px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: .5px;
+}
+
+.counter-text {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    padding: 5px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Camera sizing */
+[data-testid="stCameraInput"] video,
+[data-testid="stCameraInput"] img {
+    max-width: 600px !important;
+    border-radius: 14px !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}

@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            min-height: 600px;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        #video {
+            width: 100%;
+            height: 400px;
+            border-radius: 12px;
+            background: #000;
+            object-fit: cover;
+            display: block;
+        }
+
+        .instruction {
+            background: linear-gradient(135deg, #f6d365, #fda085);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 700;
+            margin: 15px 0;
+        }
+
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .debug {
+            margin-top: 10px;
+            padding: 8px;
+            background: #fef3c7;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #92400e;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <video id="video" autoplay playsinline muted></video>
+        <div id="instruction" class="instruction">Đang tải camera...</div>
+        <div id="status" class="status">Vui lòng chờ...</div>
+        <div id="debug" class="debug">Đang khởi tạo...</div>
+    </div>
+
+    <script>
+        const video = document.getElementById("video");
+        const instructionEl = document.getElementById("instruction");
+        const statusEl = document.getElementById("status");
+        const debugEl = document.getElementById("debug");
+
+        let capturing = false;
+        let streamlitReady = false;
+
+        const POSES = [
+            "Nhìn thẳng",
+            "Quay trái",
+            "Quay phải",
+            "Ngẩng lên",
+            "Cúi xuống"
+        ];
+
+        // Debug log
+        function log(msg) {
+            console.log(msg);
+            debugEl.textContent = msg;
+        }
+
+        log("🔥 Script loaded");
+
+        // ===== STREAMLIT API =====
+        function sendToStreamlit(data) {
+            window.parent.postMessage({
+                isStreamlitMessage: true,
+                type: "streamlit:setComponentValue",
+                value: data
+            }, "*");
+        }
+
+        function setComponentReady() {
+            log("✅ Sending componentReady");
+
+            window.parent.postMessage({
+                isStreamlitMessage: true,
+                type: "streamlit:componentReady",
+                apiVersion: 1
+            }, "*");
+
+            window.parent.postMessage({
+                isStreamlitMessage: true,
+                type: "streamlit:setFrameHeight",
+                height: 600
+            }, "*");
+
+            streamlitReady = true;
+        }
+
+        // ===== CAMERA =====
+        log("🎥 Requesting camera...");
+
+        navigator.mediaDevices.getUserMedia({
+            video: {
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                facingMode: "user"
+            }
+        })
+            .then(stream => {
+                log("✅ Camera granted");
+                video.srcObject = stream;
+
+                instructionEl.textContent = 'Nhấn "Bắt đầu chụp"';
+                statusEl.textContent = "✅ Camera sẵn sàng";
+                statusEl.style.background = "#d1fae5";
+                statusEl.style.color = "#065f46";
+
+                setComponentReady();
+            })
+            .catch(err => {
+                log("❌ Camera error: " + err.message);
+
+                instructionEl.textContent = "❌ Không truy cập được camera";
+                statusEl.textContent = err.message;
+                statusEl.style.background = "#fee2e2";
+                statusEl.style.color = "#991b1b";
+
+                setComponentReady();
+            });
+
+        // ===== CAPTURE =====
+        async function startCapture() {
+            if (capturing) {
+                log("⚠️ Already capturing");
+                return;
+            }
+
+            capturing = true;
+            log("🚀 Start capture");
+
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+
+            for (let i = 0; i < 25; i++) {
+                const poseIdx = Math.floor(i / 5);
+                const pose = POSES[poseIdx];
+
+                instructionEl.textContent = `📸 ${pose}`;
+                statusEl.textContent = `Đang chụp ${i + 1}/25...`;
+                log(`📸 Capturing ${i + 1}/25`);
+
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0);
+
+                const imageData = canvas.toDataURL("image/jpeg", 0.90);
+
+                sendToStreamlit({
+                    image: imageData,
+                    index: i + 1,
+                    pose: pose
+                });
+
+                await new Promise(r => setTimeout(r, 500)); // ← Tăng từ 400ms lên 500ms
+            }
+
+            instructionEl.textContent = "✅ Hoàn tất!";
+            statusEl.textContent = "Đã chụp xong 25 ảnh";
+            statusEl.style.background = "#dbeafe";
+            log("✅ Capture done");
+
+            capturing = false;
+
+            sendToStreamlit({
+                status: "done",
+                total: 25
+            });
+        }
+
+        // ===== LISTEN TO STREAMLIT =====
+        window.addEventListener("message", (event) => {
+            if (event.data && event.data.type === "streamlit:render") {
+                const args = event.data.args;
+                log(`📩 Received: start_capture=${args?.start_capture}`);
+
+                if (args && args.start_capture === true && !capturing && streamlitReady) {
+                    log("🚀 Triggering capture in 1s...");
+                    setTimeout(startCapture, 1000); // ← Delay 1s để đảm bảo
+                }
+            }
+        });
+
+        log("✅ Event listener ready");
+    </script>
+</body>
+
+</html>
