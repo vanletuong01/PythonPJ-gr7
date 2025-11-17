@@ -1,7 +1,7 @@
 import streamlit as st
 from pathlib import Path
 
-def render_header():
+def render_header(class_name="", full_class_name="", course_code=""):
     header_container = st.container()
     
     with header_container:
@@ -27,6 +27,7 @@ def render_header():
         with col2:
             filter_lop = st.text_input(
                 "Lớp", 
+                value=class_name,
                 placeholder="Lớp:", 
                 key="filter_class",
                 label_visibility="collapsed"
@@ -36,6 +37,7 @@ def render_header():
         with col3:
             filter_mon = st.text_input(
                 "Môn", 
+                value=full_class_name,
                 placeholder="Môn:", 
                 key="filter_subject",
                 label_visibility="collapsed"
@@ -45,6 +47,7 @@ def render_header():
         with col4:
             filter_ma_mon = st.text_input(
                 "Mã môn học", 
+                value=str(course_code) if course_code else "",
                 placeholder="Mã môn học:", 
                 key="filter_code",
                 label_visibility="collapsed"

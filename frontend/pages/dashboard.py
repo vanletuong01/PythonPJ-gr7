@@ -37,7 +37,14 @@ if dashboard_css.exists():
     st.markdown(f"<style>{dashboard_css.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
 
 # ===== RENDER HEADER =====
-filter_lop, filter_mon, filter_ma_mon = render_header()
+if class_info:
+    filter_lop, filter_mon, filter_ma_mon = render_header(
+        class_name=class_info.get("ClassName", ""),
+        full_class_name=class_info.get("FullClassName", ""),
+        course_code=class_info.get("CourseCode", "")
+    )
+else:
+    filter_lop, filter_mon, filter_ma_mon = render_header()
 
 col_left, col_right = st.columns([2.5, 1.5])
 

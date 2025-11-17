@@ -119,7 +119,7 @@ def handle_response(res):
         raise e
 
 def create_student(data: dict):
-    url = f"{API_BASE}/student/"
+    url = f"{API_BASE}/student/add"
     res = requests.post(url, json=data, timeout=TIMEOUT)
     return handle_response(res)
 
