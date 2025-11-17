@@ -84,12 +84,6 @@ with col_a:
 with col_b:
     btn_them = st.button("Thêm lớp học", key="them_lop_btn")
 
-if btn_vao:
-    if st.session_state.get("logged_in", False):
-        st.switch_page("pages/dashboard.py")
-    else:
-        st.warning("Bạn cần đăng nhập để vào lớp.")
-
 if btn_them:
     if st.session_state.get("logged_in", False):
         st.switch_page("pages/add_class.py")

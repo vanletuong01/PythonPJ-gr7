@@ -23,13 +23,34 @@ def search_students(db: Session, q: str, limit: int = 30):
         .all()
     )
 
-    data = []
-    for s, class_id in rows:
-        data.append({
-            "StudentCode": s.StudentCode,
-            "FullName": s.FullName,
-            "ClassID": class_id or "",
-            "Phone": s.Phone or ""
-        })
+    return {
+        "success": True,
+        "data": [
+            {
+                "StudentCode": r.Student.StudentCode,
+                "FullName": r.Student.FullName,
+                "ClassID": r.ClassID,      # <-- ClassID từ Study
+                "Phone": r.Student.Phone
+            }
+            for r in rows
+        ]
+    }
 
-    return {"success": True, "data": data}
+def create_student(db: Session, data):
+    student = Student(
+        FullName=data.FullName,
+        StudentCode=data.StudentCode,
+        DefaultClass=data.DefaultClass,
+        Phone=data.Phone,
+        AcademicYear=data.AcademicYear,
+        DateOfBirth=data.DateOfBirth,
+        CitizenID=data.CitizenID,
+        MajorID=data.MajorID,
+        TypeID=data.TypeID,
+        PhotoStatus=getattr(data, "PhotoStatus", "NONE"),
+        StudentPhoto=getattr(data, "StudentPhoto", None)
+    )
+    db.add(student)
+    db.commit()
+    db.refresh(student)
+    return {"success": True, "student_id": student.StudentID}

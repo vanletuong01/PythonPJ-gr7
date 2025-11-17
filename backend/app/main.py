@@ -2,7 +2,7 @@ import time
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.api.v1 import auth, class_api, student, major_api, type_api, capture_api ,attendance_api
+from backend.app.api.v1 import auth, class_api, student_api, major_api, type_api, capture_api ,attendance_api
 import logging
 
 # Bật logging
@@ -44,7 +44,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 # Đăng ký router
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(class_api.router, prefix="/api/v1/class", tags=["class"])
-app.include_router(student.router, prefix="/api/v1/student", tags=["student"])
+app.include_router(student_api.router, prefix="/api/v1/student", tags=["student"])
 app.include_router(major_api.router, prefix="/api/v1/major", tags=["major"])
 app.include_router(type_api.router, prefix="/api/v1/type", tags=["type"])
 app.include_router(capture_api.router, prefix="/api/v1/capture", tags=["capture"])
@@ -61,5 +61,4 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "ok"}
-
 
