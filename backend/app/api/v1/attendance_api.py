@@ -7,7 +7,7 @@ import numpy as np
 router = APIRouter()
 
 
-@router.post("/attendance/recognize")
+@router.post("/recognize")
 async def recognize_attendance(
     file: UploadFile = File(...),
     study_id: int = Form(...)

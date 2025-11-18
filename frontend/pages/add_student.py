@@ -148,17 +148,33 @@ if st.button("SAVE", type="primary", use_container_width=True):
             "StudentCode": mssv.strip(),
             "DefaultClass": class_lbl.strip(),
             "ClassID": class_id,
-            "Phone": phone.strip(),
+            "Phone": phone.strip() if phone else "",
             "AcademicYear": academic_year,
-            "DateOfBirth": dob.isoformat(),
-            "CitizenID": cccd.strip(),
+            "DateOfBirth": dob.isoformat() if dob else "",
+            "CitizenID": cccd.strip() if cccd else "",
+            "FullName": fullname.strip() if fullname else "",
+            "StudentCode": mssv.strip() if mssv else "",
+            "DefaultClass": class_lbl.strip() if class_lbl else "",
+            "ClassID": class_id,
+            "Phone": phone.strip() if phone else "",
+            "AcademicYear": academic_year,
+            "DateOfBirth": dob.isoformat() if dob else "",
+            "CitizenID": cccd.strip() if cccd else "",
             "MajorID": major_id,
             "TypeID": type_id,
             "PhotoStatus": "NONE"
         }
         try:
             r = create_student(payload)
-            st.success("Thêm thành công") if r.get("success") else st.error(r.get("message"))
+            if r.get("success"):
+                st.success("Thêm thành công")
+                # Reset các trường nhập liệu
+                for k in ["inp_name", "f_mssv", "inp_class", "inp_phone", "inp_cccd", "inp_dob"]:
+                    if k in st.session_state:
+                        del st.session_state[k]
+                st.rerun()
+            else:
+                st.error(r.get("message"))
         except Exception as ex:
             st.error(str(ex))
 

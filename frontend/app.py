@@ -88,11 +88,27 @@ if btn_them:
     if st.session_state.get("logged_in", False):
         st.switch_page("pages/add_class.py")
     else:
-        st.warning("Bạn cần đăng nhập để thêm lớp học.")
+        st.markdown(
+            """
+            <div style="background:#fff;padding:16px 10px;border-radius:10px;border:1px solid #ddd;display:inline-block;display:flex;align-items:center;gap:10px;">
+                <span style="font-size:20px;line-height:1;">&#9888;&#65039;</span>
+                <span style="color:#222;font-size:16px;">Bạn cần đăng nhập để thêm lớp học.</span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 if btn_vao:
     if st.session_state.get("logged_in", False):
         st.switch_page("pages/join_class.py")
     else:
-        st.warning("Bạn cần đăng nhập để vào lớp.")
+        st.markdown(
+            """
+            <div style="background:#fff;padding:16px 18px;border-radius:10px;border:1px solid #ddd;display:inline-block;display:flex;align-items:center;gap:10px;">
+                <span style="font-size:20px;line-height:1;">&#9888;&#65039;</span>
+                <span style="color:#222;font-size:16px;">Bạn cần đăng nhập để vào lớp.</span>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
 st.markdown('</div></div>', unsafe_allow_html=True)

@@ -1,109 +1,87 @@
 import cv2
 import numpy as np
 from PIL import Image
-
-from .detector import detect_faces_rgb
-from .preprocess_faces import extract_face_region_rgb
-from .arcface_embedder import get_embedding
-from .face_db import load_all_embeddings
-from .fake_detector import is_fake_by_rules
-
 from sklearn.metrics.pairwise import cosine_similarity
-from backend.app.db.database import get_connection
 
-THRESHOLD_COSINE = 0.55
-THRESHOLD_REAL_CONF = 0.55
+from backend.app.ai.face.arcface_embedder import ArcFaceEmbedder
+from backend.app.crud.student_embedding import load_all_embeddings
+from backend.app.ai.fake_detector import fake_detector_instance   # bạn sẽ load instance có sẵn
+from backend.app.ai.detect_face import detect_faces_rgb, extract_face_region_rgb
 
 
-# Load embeddings vào RAM khi khởi động
+embedder = ArcfaceEmbedder()
 _known = load_all_embeddings()
 
 
 def match_image_and_check_real(image_np_bgr):
+    """
+    image_np_bgr: frame BGR từ webcam
+    return: dict chứa similarity, real_conf, student...
+    """
+
+    # ==========================================
+    # 1. Detect face
+    # ==========================================
     rgb = cv2.cvtColor(image_np_bgr, cv2.COLOR_BGR2RGB)
     pil = Image.fromarray(rgb)
 
-    # 1. Detect face
     boxes, probs = detect_faces_rgb(pil)
     if boxes is None or len(boxes) == 0:
         return {'status': 'no_face'}
 
-    # 2. Lấy khuôn mặt lớn nhất
-    areas = [(b[2]-b[0])*(b[3]-b[1]) for b in boxes]
-    idx = int(np.argmax(areas))
+    # Lấy mặt lớn nhất
+    idx = np.argmax([(b[2] - b[0]) * (b[3] - b[1]) for b in boxes])
     box = boxes[idx]
 
-    face = extract_face_region_rgb(rgb, box)
-    if face is None:
-        return {'status': 'error', 'message': 'crop failed'}
+    face_rgb = extract_face_region_rgb(rgb, box)
+    if face_rgb is None:
+        return {'status': 'error'}
 
-    # 3. Embedding
-    emb = get_embedding(face)
+    # ⚠️ Convert về BGR trước khi embed (vì ArcfaceEmbedder dùng BGR)
+    face_bgr = face_rgb[:, :, ::-1]
+
+    # ==========================================
+    # 2. ArcFace embedding
+    # ==========================================
+    emb = embedder.get_embedding(face_bgr)
     if emb is None:
-        return {'status': 'error', 'message': 'embed fail'}
+        return {'status': 'embed_fail'}
 
-    if _known['encodings'].size == 0:
-        return {'status': 'no_db'}
+    # ==========================================
+    # 3. Load DB embedding
+    # ==========================================
+    global _known
+    if _known["encodings"].size == 0:
+        _known = load_all_embeddings()
+        if _known["encodings"].size == 0:
+            return {"status": "no_db"}
 
-    # 4. So khớp cosine
-    sims = cosine_similarity([emb], _known['encodings'])[0]
+    sims = cosine_similarity([emb], _known["encodings"])[0]
     best_idx = int(np.argmax(sims))
     best_score = float(sims[best_idx])
-    student = _known['meta'][best_idx] if best_idx < len(_known['meta']) else {}
+    student = _known["meta"][best_idx]
 
-    # 5. Kiểm tra giả mạo
-    label_fake, fake_score = is_fake_by_rules(face)
+    # ==========================================
+    # 4. Fake detector (real vs fake)
+    # ==========================================
+    fake_result = fake_detector_instance.process_frame(image_np_bgr)
+    real_conf_fake = fake_result["real_conf"]  # [0..1]
 
-    # fake_score (0..100) → scale 0..1
-    fake_norm = fake_score / 100.0
-
-    # REAL CONF = 40% fake detector + 60% face similarity
-    real_conf = (fake_norm * 0.4) + (best_score * 0.6)
-
-    is_real = real_conf >= THRESHOLD_REAL_CONF
+    # ==========================================
+    # 5. Tính tổng real_conf (kết hợp nhận diện + fake)
+    # ==========================================
+    real_conf = 0.6 * best_score + 0.4 * real_conf_fake
 
     return {
-        'status': 'ok',
-        'found': best_score >= THRESHOLD_COSINE,
-        'similarity': best_score,
-        'student': student,
-        'is_real': bool(is_real),
-        'real_conf': float(real_conf),
-        'fake_score': fake_score,
-        'label_fake': label_fake
+        "status": "ok",
+        "found": best_score >= 0.55,
+        "similarity": best_score,
+        "student": student,
+        "is_real": real_conf >= 0.55,
+        "real_conf": real_conf,
+        "fake_score": fake_result["real_conf"],   # giữ format cũ
+        "debug": {
+            "emb_sim": best_score,
+            "fake_real_conf": real_conf_fake
+        }
     }
-
-
-def save_attendance_to_db(student_id, study_id, similarity, real_conf):
-    try:
-        if not student_id or not study_id:
-            return False
-
-        conn = get_connection()
-        cur = conn.cursor()
-
-        # check duplication
-        cur.execute(
-            "SELECT AttendanceID FROM attendance WHERE StudentID=%s AND StudyID=%s",
-            (student_id, study_id)
-        )
-
-        if cur.fetchone():
-            cur.close()
-            conn.close()
-            return True
-
-        # Insert
-        cur.execute("""
-            INSERT INTO attendance (StudyID, StudentID, CheckInTime, Similarity, RealConf)
-            VALUES (%s, %s, NOW(), %s, %s)
-        """, (study_id, student_id, similarity, real_conf))
-
-        conn.commit()
-        cur.close()
-        conn.close()
-        return True
-
-    except Exception as e:
-        print('save_attendance error', e)
-        return False

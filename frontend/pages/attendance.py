@@ -43,9 +43,33 @@ with col_left:
     
     # Camera lớn
     img = st.camera_input("", key="att_cam", label_visibility="collapsed")
-    
     if img is not None:
         st.success("✅ Đã chụp ảnh điểm danh")
+
+        # ---- Gửi ảnh sang backend để nhận diện ----
+        try:
+            files = {"file": ("capture.jpg", img.getvalue(), "image/jpeg")}
+            res = requests.post("http://127.0.0.1:8000/api/face/recognize", files=files)
+
+            if res.status_code == 200:
+                data = res.json()
+
+                st.info(f"🔍 Nhận diện: {data.get('name', 'Unknown')} — Độ tin cậy {data.get('confidence', 0):.2f}")
+
+                # ---- Tự động thêm vào danh sách điểm danh ----
+                st.session_state.att_students.append({
+                    "FullName": data.get("name", "Unknown"),
+                    "StudentCode": data.get("student_code", "N/A"),
+                    "Status": "⏰ Muộn" if data.get("late", False) else "✅ Có"
+                })
+
+                st.rerun()
+
+            else:
+                st.error("❌ Backend nhận diện thất bại")
+
+        except Exception as e:
+            st.error(f"❌ Lỗi gửi ảnh: {e}")
 
 with col_right:
     # Thời gian realtime

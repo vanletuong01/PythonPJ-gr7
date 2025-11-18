@@ -6,7 +6,10 @@ import cv2
 from sqlalchemy.orm import Session
 from backend.app.ai.face.arcface_embedder import ArcfaceEmbedder
 from backend.app.crud.capture_crud import save_best_embedding
+from backend.app.embeddings_db import insert_embedding
+from backend.app.models.student import Student
 import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +137,20 @@ def save_images_and_generate_embedding(
         best_face_path = image_folder / "best_face.jpg"
         best_face_pil.save(best_face_path)
         logger.info(f"💾 Lưu best face: {best_face_path}")
+    
+    # Lấy full_name từ DB
+    stu = db.query(Student).filter(Student.StudentID == student_id).first()
+    full_name = stu.FullName if stu else None
+
+    # Lưu embedding vào student_embeddings
+    insert_embedding(
+        db=db,
+        student_id=student_id,
+        embedding=best_embedding,
+        photo_path=str(best_img_path),
+        quality=best_quality,
+        source="capture",
+    )
     
     return {
         "best_image": best_img_path.name,

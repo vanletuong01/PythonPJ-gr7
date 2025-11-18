@@ -3,6 +3,7 @@ from pathlib import Path
 import sys
 sys.path.append(str(Path(__file__).parent.parent))
 from components.header import render_header
+from components.sidebar_dashboard import render_dashboard_sidebar
 from services.api_client import get_classes, get_dashboard_stats, get_students_in_class, get_attendance_by_date
 import pandas as pd
 from datetime import datetime
@@ -45,6 +46,8 @@ if class_info:
     )
 else:
     filter_lop, filter_mon, filter_ma_mon = render_header()
+
+render_dashboard_sidebar()
 
 col_left, col_right = st.columns([2.5, 1.5])
 

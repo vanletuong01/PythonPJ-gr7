@@ -74,13 +74,14 @@ img {
     margin: 0 auto !important;
 }
 
-/* Login button ra giữa */
+/* Nút Login: nền xanh nhạt */
 button[key="login_btn"] {
     width: 250px !important;
-    /* thu nhỏ chiều rộng */
     max-width: 250px !important;
-    background: #6a6a6a !important;
-    color: #fff !important;
+    background: #e0f0ff !important;
+    /* xanh nhạt */
+    color: #0a2540 !important;
+    /* chữ xanh đậm */
     border: none !important;
     border-radius: 10px !important;
     padding: 18px 12px !important;
@@ -89,25 +90,29 @@ button[key="login_btn"] {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
     display: block !important;
     margin: 16px auto 0 auto !important;
-    /* căn giữa */
 }
 
 button[key="login_btn"]:hover {
-    background: #555 !important;
+    background: #b6e0fe !important;
+    /* xanh nhạt đậm hơn khi hover */
 }
 
+/* Nút Register: nền đỏ cam */
 button[key="go_to_register"] {
-    background: none !important;
-    color: #667eea !important;
-    padding: 6px 12px !important;
-    width: auto !important;
-    font-size: 13px !important;
+    background: linear-gradient(90deg, #ff512f 0%, #f09819 100%) !important;
+    color: #fff !important;
+    padding: 10px 0 !important;
+    width: 100% !important;
+    font-size: 15px !important;
     font-weight: 600 !important;
     border: none !important;
+    border-radius: 8px !important;
     box-shadow: none !important;
+    margin-top: 8px !important;
 }
 
 button[key="go_to_register"]:hover {
-    text-decoration: underline !important;
-    color: #445bbd !important;
+    filter: brightness(0.95) !important;
+    color: #fff !important;
+    text-decoration: none !important;
 }

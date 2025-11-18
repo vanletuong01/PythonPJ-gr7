@@ -1,152 +1,95 @@
-# arcface_embedder.py
+# ===============================================
+# arcface_embedder.py  (BẢN TỐI ƯU – 2025)
+# ===============================================
 from facenet_pytorch import InceptionResnetV1, MTCNN
 import torch
 import numpy as np
 from PIL import Image
 import cv2
+import torchvision.transforms as transforms
+
 
 class ArcfaceEmbedder:
     def __init__(self, device=None):
         self.device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
-        # Load pretrained InceptionResnetV1 trained on VGGFace2 (embedding 512)
-        self.model = InceptionResnetV1(pretrained='vggface2').eval().to(self.device)
-        # For detection/face crop we can use MTCNN; but caller may already crop
-        self.mtcnn = MTCNN(keep_all=False, device=self.device)
 
-    def crop_face(self, frame):
-        """
-        frame: numpy BGR (opencv). Return PIL cropped face or None
-        """
-        img = Image.fromarray(frame[:, :, ::-1])  # BGR->RGB
+        # Load ArcFace InceptionResnetV1 – VGGFace2
+        self.model = InceptionResnetV1(pretrained='vggface2').eval().to(self.device)
+
+        # MTCNN detect – keep_all=True để chọn mặt lớn nhất
+        self.mtcnn = MTCNN(keep_all=True, device=self.device)
+
+        self.transform = transforms.Compose([
+            transforms.Resize((160, 160), interpolation=transforms.InterpolationMode.BILINEAR),
+            transforms.ToTensor(),
+            transforms.Normalize([0.5]*3, [0.5]*3)
+        ])
+
+    # -------------------------------------------------------------
+    # Detect mặt và crop mặt lớn nhất
+    # -------------------------------------------------------------
+    def crop_face(self, frame_bgr):
+        img = Image.fromarray(frame_bgr[:, :, ::-1])  # BGR → RGB PIL
+
         boxes, probs = self.mtcnn.detect(img)
-        
-        if boxes is None or len(boxes) == 0:
+        if boxes is None:
             return None
-        
-        # Lấy face đầu tiên (hoặc lớn nhất)
-        box = boxes[0]
+
+        # Lấy mặt lớn nhất (box rộng nhất)
+        boxes = np.array(boxes)
+        areas = (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
+        box = boxes[np.argmax(areas)]
+
         x1, y1, x2, y2 = [int(b) for b in box]
         return img.crop((x1, y1, x2, y2))
 
-    def embed(self, face_pil: Image.Image):
-        """
-        face_pil: cropped face PIL, convert to tensor as facenet expects
-        Returns: 512D normalized embedding
-        """
-        # Use model's forward after preprocessing: resnet expects 160x160
-        face = face_pil.resize((160, 160))
-        
-        # Convert to torch tensor with same preprocessing as facenet-pytorch expects
-        import torchvision.transforms as transforms
-        trans = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize([0.5]*3, [0.5]*3)
-        ])
-        x = trans(face).unsqueeze(0).to(self.device)
-        
-        with torch.no_grad():
-            emb = self.model(x).cpu().numpy().reshape(-1)
-        
-        # L2 normalize
-        emb = emb / (np.linalg.norm(emb) + 1e-9)
-        return emb
-
-    # ===============================
-    # PHƯƠNG THỨC MỚI (cho capture service)
-    # ===============================
-    def get_embedding(self, img_bgr: np.ndarray) -> np.ndarray:
-        """
-        Nhận ảnh BGR (OpenCV), tự động crop face và embed.
-        
-        Args:
-            img_bgr: numpy array BGR (H, W, 3)
-        
-        Returns:
-            512D embedding (normalized) hoặc None nếu không detect được face
-        """
-        try:
-            # Crop face từ ảnh BGR
-            face_pil = self.crop_face(img_bgr)
-            
-            if face_pil is None:
-                return None
-            
-            # Generate embedding
-            embedding = self.embed(face_pil)
-            
-            return embedding
-            
-        except Exception as e:
-            print(f"❌ Error in get_embedding: {e}")
+    # -------------------------------------------------------------
+    # Convert face PIL -> embedding (512 floats)
+    # -------------------------------------------------------------
+    def embed(self, face_pil):
+        if face_pil is None:
             return None
-    
-    def get_embedding_from_pil(self, face_pil: Image.Image) -> np.ndarray:
-        """
-        Nhận face đã crop (PIL), chỉ embed (không detect).
-        Dùng khi caller đã tự crop face sẵn.
-        
-        Args:
-            face_pil: PIL Image (face đã crop)
-        
-        Returns:
-            512D embedding (normalized)
-        """
+
+        face_tensor = self.transform(face_pil).unsqueeze(0).to(self.device)
+
+        with torch.no_grad():
+            emb = self.model(face_tensor).cpu().numpy().reshape(-1)
+
+        # Đổi sang float32 (bắt buộc nếu lưu DB & realtime matching)
+        emb = emb.astype("float32")
+
+        # L2 normalize 2 lần → embedding ổn định hơn
+        emb = emb / (np.linalg.norm(emb) + 1e-10)
+        emb = emb / (np.linalg.norm(emb) + 1e-10)
+
+        return emb  # (512,)
+
+    # -------------------------------------------------------------
+    def get_embedding(self, img_bgr):
+        face = self.crop_face(img_bgr)
+        if face is None:
+            return None
+        return self.embed(face)
+
+    # -------------------------------------------------------------
+    def get_embedding_from_pil(self, face_pil):
         return self.embed(face_pil)
-    
-    def detect_and_crop_all_faces(self, img_bgr: np.ndarray) -> list:
-        """
-        Detect tất cả faces trong ảnh (nếu có nhiều người).
-        
-        Args:
-            img_bgr: numpy BGR
-        
-        Returns:
-            List of PIL cropped faces
-        """
-        img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
-        img_pil = Image.fromarray(img_rgb)
-        
-        boxes, probs = self.mtcnn.detect(img_pil)
-        
-        if boxes is None:
-            return []
-        
-        faces = []
-        for box in boxes:
-            x1, y1, x2, y2 = [int(b) for b in box]
-            face = img_pil.crop((x1, y1, x2, y2))
-            faces.append(face)
-        
-        return faces
-    
-    def batch_embed(self, faces_pil: list) -> np.ndarray:
-        """
-        Embed nhiều faces cùng lúc (batch processing).
-        
-        Args:
-            faces_pil: List of PIL Images (faces đã crop)
-        
-        Returns:
-            numpy array (N, 512) embeddings
-        """
+
+    # -------------------------------------------------------------
+    # Batch embedding
+    # -------------------------------------------------------------
+    def batch_embed(self, faces_pil):
         if len(faces_pil) == 0:
             return np.array([])
-        
-        import torchvision.transforms as transforms
-        trans = transforms.Compose([
-            transforms.Resize((160, 160)),
-            transforms.ToTensor(),
-            transforms.Normalize([0.5]*3, [0.5]*3)
-        ])
-        
-        # Stack thành batch
-        batch = torch.stack([trans(f) for f in faces_pil]).to(self.device)
-        
+
+        batch = torch.stack([self.transform(f) for f in faces_pil]).to(self.device)
+
         with torch.no_grad():
-            embeddings = self.model(batch).cpu().numpy()
-        
-        # L2 normalize từng embedding
-        norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
-        embeddings = embeddings / (norms + 1e-9)
-        
-        return embeddings
+            emb = self.model(batch).cpu().numpy()
+
+        # Normalize all
+        emb = emb.astype("float32")
+        emb = emb / (np.linalg.norm(emb, axis=1, keepdims=True) + 1e-10)
+
+        return emb
+

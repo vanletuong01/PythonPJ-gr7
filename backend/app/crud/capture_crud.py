@@ -76,13 +76,14 @@ def save_best_embedding(
         # stu.QualityScore = quality_score
         db.commit()
     
-    # Hoặc lưu vào file pickle
-    pkl_path = Path(image_path).parent / "embedding.pkl"
-    with open(pkl_path, "wb") as f:
-        pickle.dump({
-            "embedding": embedding,
-            "image_path": image_path,
-            "quality_score": quality_score
-        }, f)
+# ❌ KHÔNG LƯU FILE PKL NỮA
+# pkl_path = Path(image_path).parent / "embedding.pkl"
+# with open(pkl_path, "wb") as f:
+#     pickle.dump({
+#         "embedding": embedding,
+#         "image_path": image_path,
+#         "quality_score": quality_score
+#     }, f)
+
     
     return student_id

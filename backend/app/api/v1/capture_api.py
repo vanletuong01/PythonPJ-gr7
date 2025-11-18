@@ -144,7 +144,21 @@ async def save_face_images(
     db.commit()
     logger.info(f"✅ Cập nhật DB: StudentPhoto={stu.StudentPhoto}")
     logger.info("=" * 70)
-    
+
+    # ======= THÊM ĐOẠN NÀY ĐỂ SINH VÀ LƯU EMBEDDING =========
+    from backend.app.services.capture_service import save_images_and_generate_embedding
+    try:
+        embedding_result = save_images_and_generate_embedding(
+            student_id=stu.StudentID,
+            student_code=payload.student_code,
+            image_folder=folder,
+            db=db
+        )
+    except Exception as e:
+        logger.error(f"Lỗi sinh embedding: {e}")
+        embedding_result = {"embedding_saved": False, "error": str(e)}
+    # ========================================================
+
     return {
         "success": True,
         "message": f"Đã lưu {len(saved_paths)} ảnh thành công",
@@ -155,5 +169,6 @@ async def save_face_images(
         "failed": failed_count,
         "sample_files": [
             f.name for f in sorted(folder.glob("*.jpg"))[:5]
-        ]
+        ],
+        "embedding_result": embedding_result,  # trả về kết quả embedding
     }

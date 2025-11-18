@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 from pathlib import Path
 import sys
+from backend.app.services.capture_service import save_images_and_generate_embedding
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -150,3 +151,25 @@ if len(st.session_state.photos) >= 25 and not st.session_state.capturing:
     for i, img in enumerate(st.session_state.photos[:25]):
         with cols[i % 5]:
             st.image(img, caption=f"#{i+1}", use_container_width=True)
+
+if len(st.session_state.photos) >= 25 and not st.session_state.capturing:
+    st.markdown("---")
+    st.markdown("### 📂 Ảnh đã chụp")
+    
+    cols = st.columns(5)
+    for i, img in enumerate(st.session_state.photos[:25]):
+        with cols[i % 5]:
+            st.image(img, caption=f"#{i+1}", use_container_width=True)
+
+    # New code block starts here
+    folder = f"captures/{student_code}"
+    db = None  # Replace with actual db instance if available
+
+    # Call the new function with the required parameters
+    embedding_result = save_images_and_generate_embedding(
+        student_id=stu.StudentID,
+        student_code=payload.student_code,
+        image_folder=folder,
+        db=db
+    )
+    # New code block ends here
