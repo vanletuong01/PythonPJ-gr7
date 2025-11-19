@@ -96,15 +96,21 @@ def get_classes_by_teacher(id_login: int, db: Session = Depends(get_db)):
 # ------------------ STUDENTS IN CLASS ------------------
 @router.get("/students_in_class/{class_id}")
 def get_students_in_class(class_id: int, db: Session = Depends(get_db)):
-    students = (
-        db.query(Student.FullName, Student.StudentCode)
-        .join(Study, Student.StudentID == Study.StudentID)
+    # Code y hệt cũ
+    results = (
+        db.query(Student.StudentID, Student.FullName, Student.StudentCode)
+        .join(Study, Study.StudentID == Student.StudentID)
         .filter(Study.ClassID == class_id)
-        .order_by(Student.FullName)
         .all()
     )
-    return [{"FullName": s[0], "StudentCode": s[1]} for s in students]
-
+    return [
+        {
+            "StudentID": s.StudentID,
+            "FullName": s.FullName,
+            "StudentCode": s.StudentCode
+        }
+        for s in results
+    ]
 # ------------------ ATTENDANCE REPORT ------------------
 @router.get("/attendance_by_date/{class_id}")
 def attendance_by_date(class_id: int, db: Session = Depends(get_db)):

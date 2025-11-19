@@ -2,94 +2,127 @@ import streamlit as st
 import requests
 from pathlib import Path
 import sys
-from backend.app.services.capture_service import save_images_and_generate_embedding
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-
-from components.capture_component import capture_component
-
+# ===== CẤU HÌNH TRANG =====
 st.set_page_config(
-    page_title="Capture 25 Photos",
-    layout="wide",  # ← Đổi từ "centered" sang "wide"
+    page_title="Chụp ảnh Training",
+    layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Load CSS
+# ===== IMPORT COMPONENTS =====
+# Thêm đường dẫn gốc để import capture_component
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+# Giả sử bạn đã có component này (nếu chưa có thì dùng st.camera_input thay thế)
+try:
+    from components.capture_component import capture_component
+except ImportError:
+    # Fallback nếu không tìm thấy component
+    capture_component = None
+
+# ===== LOAD CSS =====
 css_path = Path(__file__).parent.parent / "public" / "css" / "capture_photo.css"
 if css_path.exists():
     st.markdown(f"<style>{css_path.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
+else:
+    # CSS mặc định nếu file không tồn tại
+    st.markdown("""
+        <style>
+            .block-container { padding-top: 20px !important; }
+            .stProgress > div > div > div > div { background-color: #667eea; }
+        </style>
+    """, unsafe_allow_html=True)
 
-# ===== TITLE =====
-st.markdown("<h1 style='text-align:center; color:white;'>📸 Chụp tự động 25 ảnh sinh viên</h1>", unsafe_allow_html=True)
+# ===== LẤY DỮ LIỆU TỪ SESSION =====
+# Ưu tiên lấy từ session state do trang trước (add_student/student_detail) gửi sang
+student_code = st.session_state.get("capture_mssv", "")
+full_name = st.session_state.get("capture_name", "")
+prev_page = st.session_state.get("capture_prev_page", "pages/add_student.py")
 
-# ===== STUDENT INFO =====
-student_code = st.query_params.get("code", "") or st.session_state.get("capture_mssv", "")
-full_name = st.query_params.get("name", "") or st.session_state.get("capture_name", "")
+# ===== NÚT QUAY LẠI (NAV BAR) =====
+col_back, col_title = st.columns([1, 5])
+with col_back:
+    if st.button("⬅️ Quay lại", use_container_width=True):
+        st.switch_page(prev_page)
 
+# Kiểm tra dữ liệu đầu vào
 if not student_code or not full_name:
-    st.error("❌ Thiếu MSSV hoặc Họ tên")
-    if st.button("⬅ Quay lại"):
-        st.switch_page("pages/add_student.py")
+    st.error("⚠️ Thiếu thông tin sinh viên (MSSV/Tên). Vui lòng quay lại chọn sinh viên.")
     st.stop()
 
+# ===== GIAO DIỆN CHÍNH =====
+st.markdown("<h2 style='text-align:center; margin-bottom: 10px;'>📸 Chụp 25 ảnh Training</h2>", unsafe_allow_html=True)
+
+# Card thông tin sinh viên
 st.markdown(
-    f"<div style='background:white; padding:12px 24px; border-radius:12px; text-align:center; "
-    f"font-size:16px; font-weight:600; max-width:500px; margin:0 auto 1.5rem; box-shadow:0 4px 12px rgba(0,0,0,0.15);'>"
-    f"<span style='color:#667eea;'>MSSV:</span> {student_code} &nbsp;│&nbsp; "
-    f"<span style='color:#667eea;'>Họ tên:</span> {full_name}"
-    f"</div>",
+    f"""
+    <div style='background:#f8f9fa; padding:15px; border-radius:10px; text-align:center; 
+    border:1px solid #e9ecef; margin-bottom: 20px;'>
+        <span style='font-weight:600; color:#555;'>Sinh viên:</span> 
+        <span style='font-size:18px; font-weight:bold; color:#333;'>{full_name}</span> 
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+        <span style='font-weight:600; color:#555;'>MSSV:</span> 
+        <span style='font-size:18px; font-weight:bold; color:#667eea;'>{student_code}</span>
+    </div>
+    """,
     unsafe_allow_html=True
 )
 
-# ===== STATE =====
-st.session_state.setdefault("photos", [])
-st.session_state.setdefault("capturing", False)
-st.session_state.setdefault("photo_set", set())
+# ===== KHỞI TẠO STATE =====
+if "photos" not in st.session_state:
+    st.session_state.photos = []
+if "capturing" not in st.session_state:
+    st.session_state.capturing = False
+if "photo_set" not in st.session_state:
+    st.session_state.photo_set = set()
 
 # ===== PROGRESS BAR =====
-if st.session_state.capturing or len(st.session_state.photos) > 0:
-    current = len(st.session_state.photos)
-    progress = current / 25
-    
-    if st.session_state.capturing:
-        st.info(f"📸 Đang chụp: {current}/25")
-    elif current >= 25:
-        st.success(f"✅ Hoàn tất: {current}/25")
-    else:
-        st.warning(f"⚠️ Đã chụp: {current}/25")
-    
+current_photos = len(st.session_state.photos)
+progress = min(current_photos / 25, 1.0)
+
+if current_photos > 0:
     st.progress(progress)
+    if current_photos < 25:
+        st.info(f"📷 Đã chụp: **{current_photos}/25** ảnh")
+    else:
+        st.success(f"✅ Đã đủ **{current_photos}/25** ảnh. Hãy nhấn 'Gửi Backend' để lưu.")
 
-st.write("")  # Spacing
+# ===== CONTROL BUTTONS =====
+c1, c2, c3 = st.columns(3)
 
-# ===== BUTTONS =====
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    if not st.session_state.capturing and len(st.session_state.photos) < 25:
-        start_btn = st.button("🚀 Bắt đầu chụp", type="primary", use_container_width=True, key="start_btn")
-        if start_btn:
+with c1:
+    # Nút BẮT ĐẦU CHỤP
+    if not st.session_state.capturing and current_photos < 25:
+        if st.button("🚀 Bắt đầu chụp", type="primary", use_container_width=True):
             st.session_state.photos = []
             st.session_state.photo_set = set()
             st.session_state.capturing = True
             st.rerun()
+    elif st.session_state.capturing:
+        if st.button("⏹️ Dừng chụp", type="secondary", use_container_width=True):
+            st.session_state.capturing = False
+            st.rerun()
     else:
-        # Placeholder khi đang chụp
-        st.button("🚀 Bắt đầu chụp", disabled=True, use_container_width=True, key="start_disabled")
+        st.button("🚀 Bắt đầu chụp", disabled=True, use_container_width=True)
 
-with col2:
-    if len(st.session_state.photos) >= 25 and not st.session_state.capturing:
-        send_btn = st.button("📤 Gửi backend", type="primary", use_container_width=True, key="send_btn")
-        if send_btn:
-            with st.spinner("⏳ Đang upload..."):
+with c2:
+    # Nút GỬI BACKEND
+    # Chỉ hiện khi đủ 25 ảnh và không đang chụp
+    can_send = (current_photos >= 25 and not st.session_state.capturing)
+    if st.button("📤 Gửi & Training", type="primary", use_container_width=True, disabled=not can_send):
+        if can_send:
+            with st.spinner("⏳ Đang gửi ảnh và training model..."):
                 payload = {
                     "student_code": student_code,
                     "full_name": full_name,
-                    "images": st.session_state.photos[:25]
+                    "images": st.session_state.photos[:25] # Chỉ lấy đúng 25 ảnh
                 }
                 
                 try:
+                    # Gọi API Backend
+                    # Lưu ý: Backend sẽ tự gọi logic save_images_and_generate_embedding
                     res = requests.post(
                         "http://127.0.0.1:8000/api/v1/capture/save-face-images",
                         json=payload,
@@ -97,79 +130,87 @@ with col2:
                     )
                     
                     if res.status_code == 200:
-                        st.success("✅ Đã lưu thành công!")
+                        st.balloons()
+                        st.success("✅ Lưu ảnh và Training thành công!")
                         data = res.json()
-                        st.info(f"📁 {data.get('folder')}")
-                        st.info(f"📊 {data.get('saved')}/25 ảnh")
+                        st.toast(f"Đã lưu vào: {data.get('folder', 'Unknown')}")
+                        
+                        # Reset sau khi thành công
+                        st.session_state.photos = []
+                        st.session_state.photo_set = set()
+                        
+                        # Tự động quay về trang trước sau 2s (Optional)
+                        # import time
+                        # time.sleep(2)
+                        # st.switch_page(prev_page)
+                        
                     else:
-                        st.error(f"❌ Lỗi {res.status_code}")
+                        st.error(f"❌ Lỗi từ Server: {res.status_code} - {res.text}")
                 except Exception as e:
-                    st.error(f"❌ {e}")
-    else:
-        st.button("📤 Gửi backend", disabled=True, use_container_width=True, key="send_disabled")
+                    st.error(f"❌ Lỗi kết nối: {e}")
 
-with col3:
-    if len(st.session_state.photos) >= 25 and not st.session_state.capturing:
-        retry_btn = st.button("🔄 Chụp lại", use_container_width=True, key="retry_btn")
-        if retry_btn:
-            st.session_state.photos = []
-            st.session_state.photo_set = set()
-            st.session_state.capturing = False
-            st.rerun()
-    else:
-        st.button("🔄 Chụp lại", disabled=True, use_container_width=True, key="retry_disabled")
-
-st.write("")  # Spacing
-
-# ===== CAMERA COMPONENT =====
-st.markdown("### 📹 Camera")
-
-result = capture_component(
-    start_capture=st.session_state.capturing,
-    key="webcam"
-)
-
-# ===== RECEIVE IMAGES =====
-if result and isinstance(result, dict):
-    if result.get("status") == "done":
+with c3:
+    # Nút CHỤP LẠI
+    if st.button("🔄 Reset / Chụp lại", use_container_width=True):
+        st.session_state.photos = []
+        st.session_state.photo_set = set()
         st.session_state.capturing = False
         st.rerun()
-    
-    elif "image" in result and "index" in result:
-        idx = result["index"]
-        if idx not in st.session_state.photo_set:
-            st.session_state.photo_set.add(idx)
-            st.session_state.photos.append(result["image"])
-            st.rerun()
 
-# ===== IMAGE GRID =====
-if len(st.session_state.photos) >= 25 and not st.session_state.capturing:
-    st.markdown("---")
+st.markdown("---")
+
+# ===== CAMERA COMPONENT =====
+# Logic: Sử dụng component custom để chụp tự động
+if st.session_state.capturing:
+    col_cam, col_guide = st.columns([2, 1])
+    
+    with col_cam:
+        st.markdown("### 📹 Camera đang bật")
+        if capture_component:
+            # Component custom chụp ảnh liên tục
+            result = capture_component(
+                start_capture=st.session_state.capturing,
+                key="webcam"
+            )
+            
+            # Xử lý kết quả trả về từ JS Component
+            if result and isinstance(result, dict):
+                if result.get("status") == "done":
+                    st.session_state.capturing = False
+                    st.rerun()
+                elif "image" in result and "index" in result:
+                    idx = result["index"]
+                    # Tránh chụp trùng lặp quá nhanh
+                    if idx not in st.session_state.photo_set:
+                        st.session_state.photo_set.add(idx)
+                        st.session_state.photos.append(result["image"])
+                        # Refresh lại UI để cập nhật thanh Progress
+                        st.rerun()
+        else:
+            # Fallback nếu không có component: Dùng st.camera_input (Chụp thủ công)
+            img_file = st.camera_input("Chụp thủ công (Do thiếu component)")
+            if img_file:
+                import base64
+                bytes_data = img_file.getvalue()
+                base64_str = "data:image/jpeg;base64," + base64.b64encode(bytes_data).decode()
+                st.session_state.photos.append(base64_str)
+                st.rerun()
+
+    with col_guide:
+        st.info("""
+        **Hướng dẫn:**
+        1. Giữ mặt ở chính giữa khung hình.
+        2. Xoay nhẹ mặt sang trái/phải/lên/xuống.
+        3. Hệ thống sẽ tự động chụp 25 tấm.
+        4. Sau khi xong, nhấn **Gửi & Training**.
+        """)
+
+# ===== HIỂN THỊ ẢNH ĐÃ CHỤP (GRID) =====
+if len(st.session_state.photos) > 0 and not st.session_state.capturing:
     st.markdown("### 📂 Ảnh đã chụp")
     
+    # Hiển thị lưới 5 cột
     cols = st.columns(5)
     for i, img in enumerate(st.session_state.photos[:25]):
         with cols[i % 5]:
-            st.image(img, caption=f"#{i+1}", use_container_width=True)
-
-if len(st.session_state.photos) >= 25 and not st.session_state.capturing:
-    st.markdown("---")
-    st.markdown("### 📂 Ảnh đã chụp")
-    
-    cols = st.columns(5)
-    for i, img in enumerate(st.session_state.photos[:25]):
-        with cols[i % 5]:
-            st.image(img, caption=f"#{i+1}", use_container_width=True)
-
-    # New code block starts here
-    folder = f"captures/{student_code}"
-    db = None  # Replace with actual db instance if available
-
-    # Call the new function with the required parameters
-    embedding_result = save_images_and_generate_embedding(
-        student_id=stu.StudentID,
-        student_code=payload.student_code,
-        image_folder=folder,
-        db=db
-    )
-    # New code block ends here
+            st.image(img, caption=f"Ảnh {i+1}", use_container_width=True)

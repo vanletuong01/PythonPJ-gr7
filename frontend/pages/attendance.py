@@ -1,121 +1,207 @@
 import streamlit as st
 from pathlib import Path
 from datetime import datetime
-import requests
 import sys
+import cv2
+import av
+import time
+import threading
+import pymysql
+import os
+import importlib
+from streamlit_webrtc import webrtc_streamer, RTCConfiguration, WebRtcMode
 
-# Import header component
+# ===== CẤU HÌNH =====
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from frontend.components.header import render_header
+try:
+    from frontend.components.header import render_header
+except:
+    def render_header(): st.write("")
 
-st.set_page_config(page_title="Điểm Danh Lớp Học", page_icon="✅", layout="wide")
+# Import AI
+try:
+    import backend.app.ai.smart_face_attendance as ai_module
+    importlib.reload(ai_module)
+    match_image_and_check_real = ai_module.match_image_and_check_real
+except ImportError:
+    st.error("⚠️ Lỗi module AI.")
+    st.stop()
 
-# Load CSS (chỉ giữ phần form/camera/danh sách, xóa phần header)
-css_path = Path(__file__).parent.parent / "public" / "css" / "attendance.css"
-if css_path.exists():
-    st.markdown(f"<style>{css_path.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
-
-# Render header chung
+st.set_page_config(page_title="Điểm Danh Realtime", page_icon="✅", layout="wide")
 render_header()
 
-# Title
-st.markdown('<h1 class="main-title">ĐIỂM DANH LỚP HỌC</h1>', unsafe_allow_html=True)
+# CSS
+st.markdown("""
+    <style>
+        .main-title {text-align: center; color: #d90429; font-weight: bold; margin-bottom: 10px;}
+        .att-card {
+            background-color: #f0fdf4; 
+            border-left: 5px solid #22c55e;
+            padding: 10px; margin-bottom: 5px; border-radius: 5px;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
-# Layout 2 cột: camera bên trái, danh sách bên phải
-col_left, col_right = st.columns([3, 2], gap="large")
+selected_class_id = st.session_state.get("selected_class_id")
+if not selected_class_id:
+    st.warning("⚠️ Vui lòng chọn lớp trước!")
+    st.stop()
 
-# State
-st.session_state.setdefault("att_students", [])
+# ===== HÀM LƯU DB (CHẶN ĐIỂM DANH 2 LẦN) =====
+def quick_save_attendance(student_id, class_id, similarity):
+    try:
+        conn = pymysql.connect(
+            host=os.getenv("DB_HOST", "localhost"),
+            user=os.getenv("DB_USER", "root"),
+            password=os.getenv("DB_PASSWORD", ""),
+            database=os.getenv("DB_NAME", "python_project"),
+            charset="utf8mb4"
+        )
+        cursor = conn.cursor()
+        
+        # 1. Tìm StudyID
+        sql_find = "SELECT StudyID FROM study WHERE StudentID = %s AND ClassID = %s"
+        cursor.execute(sql_find, (student_id, class_id))
+        row = cursor.fetchone()
+        
+        if row:
+            study_id = row[0]
+            
+            # 2. KIỂM TRA TRÙNG LẶP (QUAN TRỌNG)
+            # Chỉ cho phép 1 lần điểm danh trong ngày cho môn học này
+            sql_check = "SELECT AttendanceID FROM attendance WHERE StudyID = %s AND Date = CURDATE()"
+            cursor.execute(sql_check, (study_id,))
+            existing = cursor.fetchone()
+            
+            if existing:
+                conn.close()
+                return "Duplicate" # Đã điểm danh rồi
 
-with col_left:
-    # Form Buổi/Ngày + Camera to
-    st.markdown("""
-    <div class="attendance-form-left">
-        <div class="form-row">
-            <div class="form-label">Buổi:____</div>
-            <div class="form-label">Ngày:____</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Camera lớn
-    img = st.camera_input("", key="att_cam", label_visibility="collapsed")
-    if img is not None:
-        st.success("✅ Đã chụp ảnh điểm danh")
-
-        # ---- Gửi ảnh sang backend để nhận diện ----
-        try:
-            files = {"file": ("capture.jpg", img.getvalue(), "image/jpeg")}
-            res = requests.post("http://127.0.0.1:8000/api/face/recognize", files=files)
-
-            if res.status_code == 200:
-                data = res.json()
-
-                st.info(f"🔍 Nhận diện: {data.get('name', 'Unknown')} — Độ tin cậy {data.get('confidence', 0):.2f}")
-
-                # ---- Tự động thêm vào danh sách điểm danh ----
-                st.session_state.att_students.append({
-                    "FullName": data.get("name", "Unknown"),
-                    "StudentCode": data.get("student_code", "N/A"),
-                    "Status": "⏰ Muộn" if data.get("late", False) else "✅ Có"
-                })
-
-                st.rerun()
-
-            else:
-                st.error("❌ Backend nhận diện thất bại")
-
-        except Exception as e:
-            st.error(f"❌ Lỗi gửi ảnh: {e}")
-
-with col_right:
-    # Thời gian realtime
-    st.markdown(f"""
-    <div class="current-time">{datetime.now().strftime("%H:%M:%S %a,%d/%m/%Y")}</div>
-    """, unsafe_allow_html=True)
-    
-    # Danh sách sinh viên
-    st.markdown('<div class="attendance-list-title">📋 Danh sách điểm danh</div>', unsafe_allow_html=True)
-    
-    if len(st.session_state.att_students) == 0:
-        st.info("Chọn lớp/môn để tải danh sách sinh viên")
-    else:
-        st.markdown('<div class="attendance-list-box">', unsafe_allow_html=True)
-        for i, stu in enumerate(st.session_state.att_students):
-            cols = st.columns([1, 4, 3, 2])
-            cols[0].write(f"**{i+1}**")
-            cols[1].write(stu.get("FullName", "N/A"))
-            cols[2].write(stu.get("StudentCode", "N/A"))
-            status = cols[3].selectbox("", ["✅ Có", "❌ Vắng", "⏰ Muộn"], key=f"att_{i}", label_visibility="collapsed")
-            st.session_state.att_students[i]["Status"] = status
-        st.markdown('</div>', unsafe_allow_html=True)
-
-# Nút load mẫu + Lưu điểm danh
-col_btn1, col_btn2 = st.columns(2)
-with col_btn1:
-    if st.button("🔄 Tải danh sách lớp mẫu", use_container_width=True):
-        st.session_state.att_students = [
-            {"FullName": "Nguyễn Văn A", "StudentCode": "2021001", "Status": "✅ Có"},
-            {"FullName": "Trần Thị B", "StudentCode": "2021002", "Status": "✅ Có"},
-            {"FullName": "Lê Văn C", "StudentCode": "2021003", "Status": "❌ Vắng"},
-            {"FullName": "Phạm Thị D", "StudentCode": "2021004", "Status": "⏰ Muộn"},
-        ]
-        st.rerun()
-
-with col_btn2:
-    if st.button("✅ Lưu điểm danh", type="primary", use_container_width=True):
-        if len(st.session_state.att_students) == 0:
-            st.error("Chưa có sinh viên nào trong danh sách")
+            # 3. Insert nếu chưa có
+            sql_insert = """
+                INSERT INTO attendance (StudyID, Date, Time, PhotoPath)
+                VALUES (%s, CURDATE(), CURTIME(), %s)
+            """
+            cursor.execute(sql_insert, (study_id, str(similarity)))
+            conn.commit()
+            conn.close()
+            return "Success"
         else:
-            try:
-                payload = {
-                    "class_code": "K45-DHTT",
-                    "date": datetime.now().strftime("%Y-%m-%d"),
-                    "records": st.session_state.att_students
-                }
-                st.success("✅ Đã lưu điểm danh thành công!")
-            except Exception as e:
-                st.error(f"Lỗi: {e}")
+            conn.close()
+            return "NoStudyID"
+            
+    except Exception as e:
+        print(f"DB Error: {e}")
+        return "Error"
+
+# ===== STATE =====
+if "att_students" not in st.session_state:
+    st.session_state.att_students = []
+if "checkin_log" not in st.session_state:
+    st.session_state.checkin_log = {}
+
+lock = threading.Lock()
+
+# ===== CALLBACK VIDEO =====
+def video_frame_callback(frame):
+    img = frame.to_ndarray(format="bgr24")
+    
+    # Gọi AI (Code mới trả về danh sách 'faces')
+    try:
+        result = match_image_and_check_real(img)
+        
+        if result.get("status") == "ok":
+            faces = result.get("faces", [])
+            
+            # DUYỆT QUA TỪNG MẶT
+            for face in faces:
+                box = face.get("box")
+                if box:
+                    x1, y1, x2, y2 = int(box[0]), int(box[1]), int(box[2]), int(box[3])
+                    
+                    found = face.get("found")
+                    student = face.get("student", {})
+                    name = student.get("name", "Unknown")
+                    similarity = face.get("similarity", 0)
+
+                    if found:
+                        color = (0, 255, 0) # Xanh
+                        label = f"{name}"
+                        
+                        # --- LOGIC LƯU DB ---
+                        with lock:
+                            sid = student.get("id")
+                            if sid:
+                                # Kiểm tra thời gian spam (vẫn cần để tránh gọi DB liên tục mỗi giây)
+                                now = time.time()
+                                try:
+                                    last = st.session_state.checkin_log.get(sid, 0)
+                                except:
+                                    last = 0
+                                
+                                # Nếu đã qua 5 giây (để check lại DB xem đã lưu chưa)
+                                if now - last > 5:
+                                    status_db = quick_save_attendance(sid, selected_class_id, similarity)
+                                    
+                                    if status_db == "Success":
+                                        label += " (SAVED!)"
+                                        # Cập nhật UI
+                                        try:
+                                            st.session_state.att_students.insert(0, {
+                                                "FullName": name,
+                                                "StudentCode": student.get("code"),
+                                                "Time": datetime.now().strftime("%H:%M:%S"),
+                                                "Status": "✅ Mới"
+                                            })
+                                        except: pass
+                                    elif status_db == "Duplicate":
+                                        label += " (DA CO)" # Đã có trong ngày
+                                        color = (0, 200, 200) # Màu xanh lơ báo hiệu đã rồi
+                                    
+                                    # Cập nhật thời gian log để không check DB liên tục
+                                    try:
+                                        st.session_state.checkin_log[sid] = now
+                                    except: pass
+                    else:
+                        color = (0, 165, 255) # Cam
+                        label = "Unknown"
+
+                    # Vẽ khung
+                    cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
+                    cv2.putText(img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
+
+    except Exception as e:
+        print(f"Error: {e}")
+        
+    return av.VideoFrame.from_ndarray(img, format="bgr24")
+
+# ===== UI =====
+st.markdown(f'<h1 class="main-title">LỚP: {selected_class_id}</h1>', unsafe_allow_html=True)
+
+c1, c2 = st.columns([2, 1])
+
+with c1:
+    rtc_configuration = RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]})
+    webrtc_streamer(
+        key="multi-face-att",
+        mode=WebRtcMode.SENDRECV,
+        rtc_configuration=rtc_configuration,
+        video_frame_callback=video_frame_callback,
+        media_stream_constraints={"video": True, "audio": False},
+        async_processing=True,
+    )
+
+with c2:
+    if st.button("🔄 Cập nhật danh sách", use_container_width=True, type="primary"):
+        st.rerun()
+    
+    st.write(f"**Sĩ số điểm danh: {len(st.session_state.att_students)}**")
+    for s in st.session_state.att_students:
+        st.markdown(f"""
+        <div class="att-card">
+            <b>{s['FullName']}</b> <br> {s['StudentCode']} - {s['Time']}
+        </div>
+        """, unsafe_allow_html=True)

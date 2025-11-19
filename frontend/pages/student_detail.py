@@ -1,12 +1,19 @@
 import streamlit as st
-import pandas as pd
 from pathlib import Path
 import sys
 
-# ===== IMPORT SIDEBAR VÀ HEADER =====
-sys.path.insert(0, str(Path(__file__).parent.parent / "components"))
-from sidebar_dashboard import render_dashboard_sidebar
-from header import render_header
+# ===== CONFIG TRANG =====
+st.set_page_config(
+    page_title="Chi tiết sinh viên",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# ===== IMPORT SERVICES =====
+sys.path.append(str(Path(__file__).parent.parent))
+from services.api_client import get_student_detail, get_student_attendance
+from components.header import render_header
+from components.sidebar_dashboard import render_dashboard_sidebar
 
 # ===== LOAD CSS =====
 css_path = Path(__file__).parent.parent / "public" / "css" / "student_detail.css"
@@ -16,95 +23,125 @@ if css_path.exists():
 # ===== SIDEBAR =====
 render_dashboard_sidebar()
 
+# ===== LẤY DỮ LIỆU SESSION =====
+student_id = st.session_state.get("selected_student_id")
+class_info = st.session_state.get("selected_class_info", {})
+
+if not student_id:
+    st.warning("Vui lòng chọn sinh viên từ Dashboard.")
+    if st.button("Về Dashboard"):
+        st.switch_page("dashboard.py")
+    st.stop()
+
+# 1. Gọi API lấy chi tiết sinh viên
+student = get_student_detail(student_id)
+if not student:
+    st.error("Không tìm thấy thông tin sinh viên.")
+    st.stop()
+
+# 2. Gọi API lấy điểm danh
+attendance_data = []
+if class_info.get("ClassID"):
+    attendance_data = get_student_attendance(class_info.get("ClassID"), student_id)
+
 # ===== HEADER =====
-render_header()
+render_header(
+    class_name=class_info.get("ClassName", ""),
+    full_class_name=class_info.get("FullClassName", ""),
+    course_code=class_info.get("CourseCode", ""),
+    class_id=class_info.get("ClassID", "")
+)
 
-# ====== DUMMY DATA (thay bằng truy vấn DB thực tế) ======
-student = {
-    "full_name": "Nguyễn Văn A",
-    "student_code": "20123456",
-    "class": "CTK42",
-    "phone": "0912345678",
-    "khoa": "2020",
-    "nganh": "CNTT",
-    "birth_date": "20/04/2005",
-    "cccd": "123456789012"
-}
+# ===== GIAO DIỆN: NÚT BACK VỀ DASHBOARD =====
+c_back, c_rest = st.columns([1, 6])
+with c_back:
+    if st.button("⬅️ Quay lại Dashboard", use_container_width=True):
+        st.switch_page("dashboard.py")
 
-# Giả lập số buổi học của lớp (ví dụ: 4 buổi)
-num_sessions = 4
-# Giả lập danh sách điểm danh (bạn thay bằng truy vấn DB thực tế)
-attendance_list = [
-    {"session": 1, "date": "20/04/2025", "status": True, "time": "07:50:00"},
-    {"session": 2, "date": "27/04/2025", "status": True, "time": "07:00:00"},
-    {"session": 3, "date": "03/05/2025", "status": False, "time": "--:--:--"},
-    {"session": 4, "date": "10/05/2025", "status": False, "time": "--:--:--"},
-]
-
-# ====== MAIN CONTAINER ======
+# ===== FORM THÔNG TIN =====
 st.markdown("<div class='student-detail-container'>", unsafe_allow_html=True)
-st.markdown("<div class='student-detail-title'>Xem chi tiết sinh viên</div>", unsafe_allow_html=True)
+st.markdown("<div class='student-detail-title'>Hồ sơ sinh viên</div>", unsafe_allow_html=True)
 
-# ====== FORM ======
-st.markdown("<form class='student-detail-form'>", unsafe_allow_html=True)
-col1, col2 = st.columns(2)
-with col1:
-    st.text_input("Họ tên:", student["full_name"], key="full_name")
-    st.text_input("Lớp:", student["class"], key="class")
-    st.text_input("Date:", student["birth_date"], key="birth_date")
-with col2:
-    st.text_input("Mssv:", student["student_code"], key="student_code")
-    st.text_input("SDT:", student["phone"], key="phone")
-    st.text_input("CCCD:", student["cccd"], key="cccd")
-st.text_input("Khóa:", student["khoa"], key="khoa")
-st.text_input("Ngành:", student["nganh"], key="nganh")
-st.markdown("</form>", unsafe_allow_html=True)
+st.markdown("<div class='student-detail-form'>", unsafe_allow_html=True)
+c1, c2 = st.columns(2)
+with c1:
+    st.text_input("Họ tên:", value=student.get("FullName", ""), key="full_name")
+    st.text_input("Lớp mặc định:", value=student.get("DefaultClass", ""), key="class")
+    st.text_input("Ngày sinh:", value=student.get("DateOfBirth", ""), key="birth_date")
+with c2:
+    st.text_input("MSSV:", value=student.get("StudentCode", ""), disabled=True)
+    st.text_input("Số điện thoại:", value=student.get("Phone", ""), key="phone")
+    st.text_input("CCCD/CMND:", value=student.get("CitizenID", ""), key="cccd")
 
-# ====== BUTTONS ======
-st.markdown(
-    """
-    <div class='btn-row'>
-        <button class='btn-save'>SAVE</button>
-        <button class='btn-delete'>DELETE</button>
-    </div>
-    """, unsafe_allow_html=True
-)
+st.text_input("Ngành học:", value=student.get("Full_name_mj", ""), disabled=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
-# ====== TRẠNG THÁI ẢNH & ACTIONS ======
-st.markdown(
-    """
-    <div class='status-row'>
-        <span class='status-label'>Trạng thái ảnh:</span>
-        <span class='status-yes'>YES</span>
-    """, unsafe_allow_html=True
-)
+# ===== NÚT SAVE/DELETE =====
+st.markdown("<br>", unsafe_allow_html=True)
+b1, b2 = st.columns(2)
+with b1:
+    st.button("LƯU THÔNG TIN (SAVE)", type="primary", use_container_width=True)
+with b2:
+    st.button("XÓA SINH VIÊN (DELETE)", type="secondary", use_container_width=True)
 
-# Nút chuyển sang capture_photo.py
-if st.button("Lấy ảnh sinh viên", key="capture_photo_btn"):
-    st.switch_page("capture_photo.py")
+st.divider()
 
-st.markdown(
-    """
-        <button class='btn-action'>Training data</button>
-    </div>
-    """, unsafe_allow_html=True
-)
-
-# ====== DANH SÁCH ĐIỂM DANH ======
-st.markdown("<div class='attendance-list'>", unsafe_allow_html=True)
-for i in range(num_sessions):
-    att = attendance_list[i] if i < len(attendance_list) else {"session": i+1, "date": "--/--/----", "status": False, "time": "--:--:--"}
-    status = "Đã điểm danh" if att["status"] else "Chưa điểm danh"
-    status_class = "" if att["status"] else "miss"
-    st.markdown(
-        f"""
-        <div class='attendance-item'>
-            <span class='buoi'>Buổi {att['session']}</span>
-            <span class='date'>{att['date']}</span>
-            <span class='status {status_class}'>{status}</span>
-            <span class='time'>{att['time']}</span>
+# ===== TRẠNG THÁI ẢNH & CHUYỂN TRANG CAPTURE =====
+col_img, col_train = st.columns([1, 1])
+with col_img:
+    has_photo = student.get("PhotoStatus", False)
+    status_html = "<span class='status-yes'>ĐÃ CÓ ẢNH</span>" if has_photo else "<span class='status-no'>CHƯA CÓ ẢNH</span>"
+    
+    st.markdown(f"""
+        <div class='status-row'>
+            <span class='status-label'>Trạng thái ảnh:</span>
+            {status_html}
         </div>
-        """, unsafe_allow_html=True
-    )
+    """, unsafe_allow_html=True)
+    
+    # --- LOGIC CHUYỂN TRANG CHỤP ẢNH ---
+    if st.button("📸 Lấy ảnh / Chụp ảnh", use_container_width=True):
+        # 1. Lưu trang hiện tại để quay lại
+        st.session_state["capture_prev_page"] = "pages/student_detail.py"
+        
+        # 2. Lưu thông tin sinh viên để hiển thị bên kia
+        st.session_state["capture_mssv"] = student.get("StudentCode", "")
+        st.session_state["capture_name"] = student.get("FullName", "")
+        
+        # 3. Chuyển trang
+        st.switch_page("pages/capture_photo.py")
+
+with col_train:
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("⚡ Training Data", use_container_width=True):
+        st.toast("Đang gửi yêu cầu training...", icon="⏳")
+
+# ===== LỊCH SỬ ĐIỂM DANH =====
+st.markdown("<div style='margin-top:30px' class='student-detail-title'>Lịch sử điểm danh</div>", unsafe_allow_html=True)
+st.markdown("<div class='attendance-list'>", unsafe_allow_html=True)
+
+if attendance_data:
+    for item in attendance_data:
+        buoi = item.get("SessionNumber", "?")
+        ngay = item.get("Date", "")
+        is_present = item.get("IsPresent", False)
+        gio = item.get("Time", "--:--") if is_present else "--:--"
+        
+        status_text = "Đã điểm danh" if is_present else "Vắng"
+        status_class = "" if is_present else "miss"
+
+        st.markdown(
+            f"""
+            <div class='attendance-item'>
+                <span class='buoi'>Buổi {buoi}</span>
+                <span class='date'>{ngay}</span>
+                <span class='status {status_class}'>{status_text}</span>
+                <span class='time'>{gio}</span>
+            </div>
+            """, unsafe_allow_html=True
+        )
+else:
+    st.info(f"Chưa có dữ liệu điểm danh cho lớp {class_info.get('ClassName', 'này')}.")
+
 st.markdown("</div>", unsafe_allow_html=True)
 st.markdown("</div>", unsafe_allow_html=True)

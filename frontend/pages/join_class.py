@@ -172,8 +172,8 @@ with col_right:
     # =============================
     if class_info and st.button("START", use_container_width=True, key="start_button"):
         st.session_state["selected_class_id"] = class_info["ClassID"]
+        st.session_state["selected_class_info"] = class_info  # Lưu cả thông tin lớp
         st.success(f"Bạn đã vào lớp {class_info['ClassName']} thành công!")
-        
         st.switch_page("pages/dashboard.py")
 # ← trang bạn muốn chuyển đến
 

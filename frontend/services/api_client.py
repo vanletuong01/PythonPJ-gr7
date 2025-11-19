@@ -98,9 +98,18 @@ def get_classes_by_teacher(id_login):
     
 def get_students_in_class(class_id):
     try:
-        resp = requests.get(f"{API_BASE}/class/students_in_class/{class_id}", timeout=TIMEOUT)
-        return resp.json() if resp.status_code == 200 else []
-    except:
+        # SỬA: Đổi "/class/" thành "/student/" vì API này nằm bên student_api.py
+        url = f"{API_BASE}/student/students_in_class/{class_id}"
+        
+        resp = requests.get(url, timeout=TIMEOUT)
+        if resp.status_code == 200:
+            return resp.json()
+        else:
+            # In ra lỗi để debug nếu không phải 200
+            print(f"[DEBUG API] Error fetching students: {resp.status_code} - {resp.text}")
+            return []
+    except Exception as e:
+        print(f"[DEBUG API] Exception: {e}")
         return []
 
 def get_attendance_by_date(class_id):
@@ -162,3 +171,26 @@ async def assign_student_to_class(student_id, class_id):
     except Exception as e:
         print(f"[API ERROR] assign_student_to_class: {e}")
         return {"success": False, "message": str(e), "status": 0}
+
+def get_student_attendance(class_id, student_id):
+    """
+    Lấy lịch sử điểm danh của sinh viên (Mock hoặc gọi API thật)
+    """
+    # URL này phải khớp với backend của bạn
+    url = f"{API_BASE}/attendance/history/{class_id}/{student_id}"
+    try:
+        resp = requests.get(url, timeout=TIMEOUT)
+        if resp.status_code == 200:
+            return resp.json()
+        return []
+    except:
+        return []
+
+def get_student_detail(student_id):
+    url = f"http://127.0.0.1:8000/api/v1/student/detail/{student_id}"
+    resp = requests.get(url)
+    if resp.ok:
+        data = resp.json()
+        if data.get("success"):
+            return data["data"]
+    return None

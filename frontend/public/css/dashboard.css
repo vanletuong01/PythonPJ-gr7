@@ -84,11 +84,52 @@ section[data-testid="stSidebar"]>div {
     max-width: 100% !important;
 }
 
-/* Button OUT */
+/* === STYLE MỚI CHO NÚT CHI TIẾT === */
 button[kind="secondary"] {
-    background-color: #dc3545 !important;
-    color: white !important;
-    font-weight: 600;
+    /* 1. Màu sắc nhạt, tinh tế */
+    background-color: #ffffff !important;
+    border: 1px solid #d1d5db !important;
+    /* Viền xám nhạt */
+    color: #374151 !important;
+    /* Chữ màu xám đậm */
+
+    /* 2. Kích thước nhỏ gọn (Slim) */
+    height: 30px !important;
+    /* Chiều cao cố định nhỏ */
+    min-height: 30px !important;
+    /* Ghi đè mặc định của Streamlit */
+    padding: 0px 10px !important;
+    /* Thu gọn lề trên dưới */
+
+    /* 3. Font chữ */
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    line-height: 28px !important;
+    /* Căn giữa chữ theo chiều dọc */
+
+    /* 4. Chống vỡ giao diện */
+    white-space: nowrap !important;
+    /* Bắt buộc chữ nằm trên 1 dòng */
+    border-radius: 4px !important;
+    /* Bo góc nhẹ */
+    box-shadow: none !important;
+}
+
+/* Hiệu ứng khi di chuột vào (Hover) */
+button[kind="secondary"]:hover {
+    border-color: #667eea !important;
+    /* Viền xanh tím */
+    color: #667eea !important;
+    /* Chữ xanh tím */
+    background-color: #f9fafb !important;
+    /* Nền hơi xám nhẹ */
+}
+
+/* Khi đang bấm nút */
+button[kind="secondary"]:active {
+    background-color: #f3f4f6 !important;
+    transform: translateY(1px);
+    /* Hiệu ứng nhún nhẹ */
 }
 
 /* Button primary */
@@ -117,5 +158,3 @@ h3 {
     font-weight: 600;
     margin-bottom: 1rem;
 }
-
-from components.header import render_header render_header() # Dòng 21

@@ -1,3 +1,4 @@
+/* ===== GLOBAL & RESET ===== */
 * {
     margin: 0;
     padding: 0;
@@ -5,88 +6,47 @@
     font-family: 'Segoe UI', Arial, sans-serif;
 }
 
+/* 1. XÓA KHOẢNG TRẮNG ĐẦU TRANG */
+.block-container {
+    padding-top: 10px !important;
+    /* Giảm xuống 10px hoặc 0px tùy ý */
+    padding-bottom: 0px !important;
+    max-width: 100% !important;
+}
+
+/* 2. ẨN THANH TOOLBAR CỦA STREAMLIT (Nếu muốn ẩn luôn cái thanh menu 3 gạch ở góc phải trên) */
+header[data-testid="stHeader"] {
+    display: none !important;
+}
+
+/* --- 1. FIX LỖI KHOẢNG TRẮNG CỦA STREAMLIT --- */
+.block-container {
+    padding-top: 20px !important;
+    /* Đẩy sát lên trên */
+    padding-bottom: 40px !important;
+    max-width: 100% !important;
+}
+
 /* ===== BODY ===== */
-body, .stApp {
+body,
+.stApp {
     background: #f7f7fa !important;
 }
 
-/* ===== SIDEBAR ===== */
-.sidebar {
-    background: #f3f4f6;
-    min-height: 100vh;
-    padding: 0 0 0 0;
-    border-right: 2px solid #e5e7eb;
+/* ===== NÚT BACK (QUAY LẠI) ===== */
+.back-container {
+    margin-bottom: 10px;
 }
 
-.sidebar .logo {
-    margin: 24px auto 12px auto;
-    display: block;
-    width: 140px;
-}
-
-.sidebar .menu {
-    margin: 40px 0 0 0;
-    padding: 0 0 0 32px;
-}
-
-.sidebar .menu-title {
-    font-size: 22px;
-    font-weight: 700;
-    color: #22223b;
-    margin-bottom: 24px;
-}
-
-.sidebar .menu-item {
-    font-size: 18px;
-    font-weight: 600;
-    color: #22223b;
-    margin-bottom: 18px;
-    cursor: pointer;
-    transition: color 0.2s;
-}
-
-.sidebar .menu-item.active,
-.sidebar .menu-item:hover {
-    color: #3b82f6;
-}
-
-.sidebar .clock {
-    margin: 40px 0 0 0;
-    padding: 12px 0;
-    text-align: center;
-    font-size: 16px;
-    background: #fff;
-    border-radius: 8px;
-    border: 1px solid #e5e7eb;
-}
-
-.sidebar .out-btn {
-    margin: 24px auto 0 auto;
-    display: block;
-    width: 90%;
-    background: #d1d5db;
-    color: #22223b;
-    font-weight: 700;
-    font-size: 20px;
-    border: none;
-    border-radius: 8px;
-    padding: 12px 0;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.sidebar .out-btn:hover {
-    background: #ef4444;
-    color: #fff;
-}
-
-/* ===== MAIN CONTAINER ===== */
+/* ===== MAIN CONTAINER (GIỮ NGUYÊN STYLE CŨ CỦA BẠN) ===== */
 .student-detail-container {
-    max-width: 700px;
-    margin: 32px auto;
+    max-width: 800px;
+    /* Cho rộng hơn xíu */
+    margin: 0 auto;
+    /* Căn giữa trang */
     background: #fff;
     border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.07);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
     padding: 32px 36px 24px 36px;
 }
 
@@ -95,52 +55,26 @@ body, .stApp {
     font-weight: 700;
     margin-bottom: 18px;
     color: #22223b;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
 }
 
+/* ===== FORM ===== */
 .student-detail-form {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 18px 24px;
     margin-bottom: 18px;
 }
 
-.student-detail-form .form-group {
-    flex: 1 1 220px;
-    display: flex;
-    flex-direction: column;
-}
-
-.student-detail-form label {
-    font-size: 15px;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 6px;
-}
-
-.student-detail-form input,
-.student-detail-form select {
-    padding: 10px 12px;
+/* Chỉnh lại Input của Streamlit cho đẹp giống CSS cũ */
+div[data-testid="stTextInput"] input {
+    background-color: #f9fafb;
     border: 1.5px solid #e5e7eb;
     border-radius: 8px;
-    font-size: 16px;
-    background: #f9fafb;
-    color: #22223b;
-    outline: none;
-    transition: border 0.2s;
+    padding: 8px 12px;
 }
 
-.student-detail-form input:focus,
-.student-detail-form select:focus {
-    border: 1.5px solid #3b82f6;
-    background: #fff;
-}
-
-.student-detail-form .form-group.short {
-    max-width: 160px;
-}
-
-.student-detail-form .form-group.long {
-    flex: 2 1 320px;
+div[data-testid="stTextInput"] input:focus {
+    border-color: #3b82f6;
+    background-color: #fff;
 }
 
 /* ===== BUTTONS ===== */
@@ -150,39 +84,8 @@ body, .stApp {
     margin: 18px 0 10px 0;
 }
 
-.btn-save {
-    flex: 1;
-    background: #22223b;
-    color: #fff;
-    font-weight: 700;
-    font-size: 18px;
-    border: none;
-    border-radius: 8px;
-    padding: 12px 0;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.btn-save:hover {
-    background: #3b82f6;
-}
-
-.btn-delete {
-    flex: 1;
-    background: #ef4444;
-    color: #fff;
-    font-weight: 700;
-    font-size: 18px;
-    border: none;
-    border-radius: 8px;
-    padding: 12px 0;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.btn-delete:hover {
-    background: #b91c1c;
-}
+/* CSS giả lập nút (Vì Streamlit button khó style trực tiếp class) */
+/* Chúng ta sẽ dùng st.button native nhưng bọc trong container */
 
 /* ===== STATUS & ACTIONS ===== */
 .status-row {
@@ -192,47 +95,31 @@ body, .stApp {
     margin-bottom: 16px;
 }
 
-.status-row .status-label {
+.status-label {
     font-size: 16px;
     font-weight: 600;
     color: #22223b;
 }
 
-.status-row .status-yes {
+.status-yes {
     background: #d1fae5;
     color: #065f46;
     border-radius: 8px;
     padding: 6px 18px;
     font-weight: 700;
     font-size: 16px;
-    border: none;
-    margin-right: 8px;
 }
 
-.status-row .btn-action {
-    background: #fca5a5;
-    color: #b91c1c;
-    border: none;
+.status-no {
+    background: #fee2e2;
+    color: #991b1b;
     border-radius: 8px;
-    padding: 8px 18px;
+    padding: 6px 18px;
     font-weight: 700;
     font-size: 16px;
-    margin-right: 8px;
-    cursor: pointer;
-    transition: background 0.2s;
 }
 
-.status-row .btn-action:last-child {
-    background: #fca5a5;
-    color: #b91c1c;
-}
-
-.status-row .btn-action:hover {
-    background: #f87171;
-    color: #fff;
-}
-
-/* ===== ATTENDANCE LIST ===== */
+/* ===== ATTENDANCE LIST (BẢNG ĐIỂM DANH) ===== */
 .attendance-list {
     margin-top: 24px;
 }
@@ -251,16 +138,19 @@ body, .stApp {
 .attendance-item .buoi {
     font-weight: 700;
     color: #22223b;
+    width: 15%;
 }
 
 .attendance-item .date {
     color: #6b7280;
     font-size: 15px;
+    width: 30%;
 }
 
 .attendance-item .status {
     font-weight: 600;
     color: #10b981;
+    width: 30%;
 }
 
 .attendance-item .status.miss {
@@ -271,19 +161,14 @@ body, .stApp {
     font-weight: 700;
     color: #3b82f6;
     font-size: 15px;
+    text-align: right;
+    width: 25%;
 }
 
+/* Mobile Responsive */
 @media (max-width: 900px) {
     .student-detail-container {
-        max-width: 98vw;
-        padding: 18px 6vw;
-    }
-    .student-detail-form {
-        flex-direction: column;
-        gap: 10px 0;
-    }
-    .btn-row {
-        flex-direction: column;
-        gap: 10px 0;
+        max-width: 95vw;
+        padding: 20px;
     }
 }

@@ -3,9 +3,12 @@ from sqlalchemy.orm import Session
 from backend.app.models.student import Student
 from backend.app.models.major import Major
 from backend.app.models.type import Type
+from backend.app.models.study import Study
+from backend.app.models.class_model import Class
 from backend.app.database import get_db
 from backend.app.services.student_service import search_students, create_student
 from backend.app.schemas.student_schemas import StudentCreate
+from backend.app.crud.student_crud import get_student_detail
 
 router = APIRouter(tags=["Student"])
 
@@ -51,3 +54,29 @@ def search_students(q: str = Query(..., min_length=1), limit: int = 30, db: Sess
 @router.post("/add")
 def add_student(data: StudentCreate, db: Session = Depends(get_db)):
     return create_student(db, data)
+
+@router.get("/detail/{student_id}")
+def api_get_student_detail(student_id: int, db: Session = Depends(get_db)):
+    student = get_student_detail(db, student_id)
+    if not student:
+        return {"success": False, "message": "Không tìm thấy sinh viên"}
+    return {"success": True, "data": student}
+
+@router.get("/students_in_class/{class_id}")
+def get_students_in_class(class_id: int, db: Session = Depends(get_db)):
+    # Lấy danh sách sinh viên thuộc lớp
+    results = (
+        db.query(Student.StudentID, Student.FullName, Student.StudentCode)
+        .join(Study, Study.StudentID == Student.StudentID)
+        .filter(Study.ClassID == class_id)
+        .all()
+    )
+    # Trả về list[dict] có StudentID
+    return [
+        {
+            "StudentID": s.StudentID,
+            "FullName": s.FullName,
+            "StudentCode": s.StudentCode
+        }
+        for s in results
+    ]
