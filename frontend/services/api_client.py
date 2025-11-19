@@ -128,3 +128,37 @@ def search_students(keyword: str, limit: int = 30):
     params = {"q": keyword, "limit": limit}
     res = requests.get(url, params=params, timeout=TIMEOUT)
     return handle_response(res)
+
+async def assign_student_to_class(student_id, class_id):
+    url = f"{BASE_URL}/class/assign"
+    payload = {
+        "student_id": student_id,
+        "class_id": class_id
+    }
+    response = requests.post(url, json=payload)
+    response.raise_for_status()
+    return response.json()
+
+    """
+    Gán sinh viên vào lớp.
+    payload ví dụ: {"ClassID": 123, "StudentCode": "2331500001"}
+    """
+    url = f"{API_BASE}/class/assign"    # dùng API_BASE chứ không phải BASE_URL
+    try:
+        resp = requests.post(url, json=payload, timeout=TIMEOUT)
+        resp.raise_for_status()
+        # trả về JSON hoặc mock nếu backend trả kiểu khác
+        try:
+            return resp.json()
+        except:
+            return {"success": True, "status": resp.status_code, "text": resp.text}
+    except requests.exceptions.HTTPError as e:
+        # in debug để dễ thấy lỗi từ backend
+        print(f"[API ERROR] assign_student_to_class {resp.status_code}: {resp.text}")
+        raise
+    except requests.exceptions.ConnectionError as e:
+        print(f"[API ERROR] ConnectionError assign_student_to_class: {e}")
+        return {"success": False, "message": "Không kết nối được backend", "status": 0}
+    except Exception as e:
+        print(f"[API ERROR] assign_student_to_class: {e}")
+        return {"success": False, "message": str(e), "status": 0}

@@ -58,10 +58,8 @@ async def recognize_attendance(
         # Lưu điểm danh
         student = result.get('student', {})
         save_attendance_to_db(
-            student.get('StudentID'),
             study_id,
-            result.get('similarity'),
-            result.get('real_conf')
+            result.get('similarity')
         )
         
         return {

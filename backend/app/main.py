@@ -2,7 +2,8 @@ import time
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.api.v1 import auth, class_api, student_api, major_api, type_api, capture_api ,attendance_api
+from backend.app.api.v1 import auth, class_api, student_api, major_api, type_api, capture_api ,attendance_api ,recognize_api
+
 import logging
 
 # Bật logging
@@ -49,6 +50,9 @@ app.include_router(major_api.router, prefix="/api/v1/major", tags=["major"])
 app.include_router(type_api.router, prefix="/api/v1/type", tags=["type"])
 app.include_router(capture_api.router, prefix="/api/v1/capture", tags=["capture"])
 app.include_router(attendance_api.router, prefix="/api/v1/attendance", tags=["attendance"])
+app.include_router(recognize_api.router, prefix="/api/v1/ai", tags=["ai"])
+
+
 
 print("🔥 Registered routes:")
 for route in app.routes:

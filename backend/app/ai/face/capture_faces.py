@@ -2,8 +2,8 @@
 import cv2
 import time
 import numpy as np
-from arcface_embedder import ArcfaceEmbedder
-from face_db import FaceDB
+from backend.app.ai.face.arcface_embedder import ArcfaceEmbedder
+from backend.app.ai.student_embedding import save_embedding
 from facenet_pytorch import MTCNN
 from PIL import Image
 

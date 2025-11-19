@@ -14,19 +14,20 @@ from backend.app.models.teach import Teach
 from backend.app.models.study import Study
 from backend.app.models.student import Student
 from backend.app.models.attendance import Attendance
+from pydantic import BaseModel
 
 router = APIRouter()
 
+# ------------------ GET ALL CLASSES ------------------
 @router.get("/", response_model=list[ClassOut])
 def api_get_all_classes(db: Session = Depends(get_db)):
     return get_all_classes(db)
 
-
+# ------------------ CREATE CLASS ------------------
 @router.post("/create", response_model=ClassOut)
 def api_create_class(class_data: ClassCreate, db: Session = Depends(get_db)):
     try:
         result = create_class(db, class_data)
-        print(f"[api_create_class] SUCCESS ClassID={result.ClassID}")
 
         id_login = getattr(class_data, "id_login", None)
         if id_login:
@@ -35,6 +36,7 @@ def api_create_class(class_data: ClassCreate, db: Session = Depends(get_db)):
             db.commit()
 
         return result
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except IntegrityError as e:
@@ -42,11 +44,12 @@ def api_create_class(class_data: ClassCreate, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
+# ------------------ LIST CLASSES ------------------
 @router.get("/list", response_model=list[ClassOut])
 def api_list_classes(db: Session = Depends(get_db)):
     return get_all_classes(db)
 
+# ------------------ STATS ------------------
 @router.get("/dashboard/stats")
 def api_dashboard_stats(db: Session = Depends(get_db)):
     total_classes = db.query(func.count(Class.ClassID)).scalar()
@@ -63,6 +66,7 @@ def api_dashboard_stats(db: Session = Depends(get_db)):
         "attendance_by_month": [{"month": m, "count": c} for m, c in attendance_by_month]
     }
 
+# ------------------ DROPDOWN DATA ------------------
 @router.get("/majors")
 def api_get_majors(db: Session = Depends(get_db)):
     majors = db.query(Major).all()
@@ -78,6 +82,7 @@ def api_get_shifts(db: Session = Depends(get_db)):
     shifts = db.query(Shift).all()
     return [{"ShiftID": s.ShiftID, "ShiftName": s.ShiftName} for s in shifts]
 
+# ------------------ CLASSES OF TEACHER ------------------
 @router.get("/by_teacher/{id_login}")
 def get_classes_by_teacher(id_login: int, db: Session = Depends(get_db)):
     classes = (
@@ -86,9 +91,9 @@ def get_classes_by_teacher(id_login: int, db: Session = Depends(get_db)):
         .filter(Teach.id_login == id_login)
         .all()
     )
-    # Luôn trả về list (kể cả khi rỗng)
     return [c.__dict__ for c in classes]
 
+# ------------------ STUDENTS IN CLASS ------------------
 @router.get("/students_in_class/{class_id}")
 def get_students_in_class(class_id: int, db: Session = Depends(get_db)):
     students = (
@@ -100,6 +105,7 @@ def get_students_in_class(class_id: int, db: Session = Depends(get_db)):
     )
     return [{"FullName": s[0], "StudentCode": s[1]} for s in students]
 
+# ------------------ ATTENDANCE REPORT ------------------
 @router.get("/attendance_by_date/{class_id}")
 def attendance_by_date(class_id: int, db: Session = Depends(get_db)):
     result = (
@@ -111,3 +117,47 @@ def attendance_by_date(class_id: int, db: Session = Depends(get_db)):
         .all()
     )
     return [{"date": r[0], "present": r[1]} for r in result]
+
+
+# ============================================================
+#     ⭐⭐⭐ API GÁN SINH VIÊN VÀO LỚP (QUAN TRỌNG NHẤT) ⭐⭐⭐
+# ============================================================
+
+class AssignStudentRequest(BaseModel):
+    student_id: int
+    class_id: int
+
+@router.post("/assign")
+def assign_student_to_class(payload: AssignStudentRequest, db: Session = Depends(get_db)):
+    # Kiểm tra class
+    cls = db.query(Class).filter(Class.ClassID == payload.class_id).first()
+    if not cls:
+        raise HTTPException(status_code=404, detail="Class not found")
+
+    # Kiểm tra student
+    student = db.query(Student).filter(Student.StudentID == payload.student_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    # Kiểm tra trùng
+    exists = db.query(Study).filter(
+        Study.ClassID == payload.class_id,
+        Study.StudentID == payload.student_id
+    ).first()
+
+    if exists:
+        raise HTTPException(status_code=400, detail="Student already in this class")
+
+    # Thêm vào bảng Study
+    new_study = Study(
+        ClassID=payload.class_id,
+        StudentID=payload.student_id
+    )
+    db.add(new_study)
+
+    # tăng sĩ số lớp
+    cls.Quantity = (cls.Quantity or 0) + 1
+
+    db.commit()
+
+    return {"message": "Student assigned successfully", "class_id": payload.class_id}

@@ -5,7 +5,7 @@ from PIL import Image
 from sklearn.metrics.pairwise import cosine_similarity
 import torch
 from facenet_pytorch import MTCNN
-from face_app.fake_detector import texture_score
+from backend.app.ai.face.fake_detector import FakeDetector
 from face_app.smart_face_attendance import detect_border_smart  # tái sử dụng hàm viền
 
 # ===============================
