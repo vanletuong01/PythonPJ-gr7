@@ -52,8 +52,6 @@ app.include_router(capture_api.router, prefix="/api/v1/capture", tags=["capture"
 app.include_router(attendance_api.router, prefix="/api/v1/attendance", tags=["attendance"])
 app.include_router(recognize_api.router, prefix="/api/v1/ai", tags=["ai"])
 
-
-
 print("🔥 Registered routes:")
 for route in app.routes:
     print(f"  - {route.path} [{route.methods if hasattr(route, 'methods') else 'N/A'}]")

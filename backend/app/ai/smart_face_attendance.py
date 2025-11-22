@@ -4,6 +4,7 @@ from PIL import Image
 from sklearn.metrics.pairwise import cosine_similarity
 import pymysql
 import os
+import base64
 
 # ===== IMPORT CÁC MODULE AI =====
 from backend.app.ai.face.arcface_embedder import ArcfaceEmbedder
@@ -13,6 +14,33 @@ from backend.app.ai.face.detector import detect_faces_rgb, extract_face_region_r
 # ===== KHỞI TẠO MODEL (Load 1 lần duy nhất khi chạy server) =====
 embedder = ArcfaceEmbedder()
 _known = load_all_embeddings()
+
+def get_student_class_name(student_id):
+    """
+    Lấy tên lớp của sinh viên (lấy lớp đầu tiên nếu học nhiều lớp)
+    """
+    try:
+        conn = pymysql.connect(
+            host=os.getenv("DB_HOST", "localhost"),
+            user=os.getenv("DB_USER", "root"),
+            password=os.getenv("DB_PASSWORD", ""),
+            database=os.getenv("DB_NAME", "python_project"),
+            charset="utf8mb4"
+        )
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT c.ClassName 
+            FROM study s 
+            JOIN class c ON s.ClassID = c.ClassID 
+            WHERE s.StudentID = %s 
+            LIMIT 1
+        """, (student_id,))
+        row = cursor.fetchone()
+        conn.close()
+        return row[0] if row else "N/A"
+    except Exception as e:
+        print(f"❌ Error get_student_class_name: {e}")
+        return "N/A"
 
 def match_image_and_check_real(image_np_bgr):
     """
@@ -33,7 +61,6 @@ def match_image_and_check_real(image_np_bgr):
     # 3. Xử lý Database (Nếu rỗng thì load lại)
     global _known
     if _known["encodings"].size == 0:
-        # print("DEBUG: Database rỗng, đang thử reload...")
         _known = load_all_embeddings()
 
     results = []
@@ -47,7 +74,6 @@ def match_image_and_check_real(image_np_bgr):
 
         # --- Bước B: Tạo Vector đặc trưng (Embedding) ---
         face_pil = Image.fromarray(face_rgb)
-        # Gọi hàm get_embedding_from_pil để tránh detect lại (tối ưu tốc độ)
         emb = embedder.get_embedding_from_pil(face_pil)
         
         if emb is None: 
@@ -67,19 +93,17 @@ def match_image_and_check_real(image_np_bgr):
             # Ngưỡng nhận diện (0.50 - 0.55 là mức ổn định cho ArcFace)
             if best_score >= 0.50:
                 found = True
-                student = _known["meta"][best_idx]
+                student = _known["meta"][best_idx].copy()  # Copy để tránh modify gốc
+                
+                # ⭐ THÊM THÔNG TIN LỚP HỌC
+                student_id = student.get("id")
+                if student_id:
+                    student["class_name"] = get_student_class_name(student_id)
+                else:
+                    student["class_name"] = "N/A"
         
         # --- Bước D: Kiểm tra giả mạo (Liveness Check) ---
-        # Lưu ý: Để hệ thống Realtime chạy nhanh khi có nhiều người, 
-        # ta tạm thời dùng độ tương đồng (best_score) làm trọng số chính.
-        # Nếu muốn check kỹ từng mặt, hệ thống sẽ bị chậm (FPS tụt).
-        
-        # Logic đơn giản: Nếu giống > 50% thì coi như là người thật
         is_real = True 
-        
-        # Nếu bạn muốn dùng bộ lọc giả mạo (FakeDetector):
-        # real_conf = fake_detector_instance.process_frame(face_bgr_crop)...
-        # Nhưng khuyến nghị để mặc định True cho mượt.
 
         # --- Bước E: Đóng gói kết quả ---
         results.append({
@@ -87,7 +111,7 @@ def match_image_and_check_real(image_np_bgr):
             "found": found,             # Có tìm thấy trong DB không
             "similarity": best_score,   # Độ chính xác (0.0 -> 1.0)
             "is_real": is_real,         # Có phải người thật không
-            "student": student          # Thông tin sinh viên (nếu tìm thấy)
+            "student": student          # Thông tin sinh viên (ĐÃ CÓ class_name)
         })
 
     # 5. Trả về kết quả tổng
@@ -97,9 +121,12 @@ def match_image_and_check_real(image_np_bgr):
     }
 
 
-def save_attendance_to_db(study_id, similarity):
+def save_attendance_to_db(study_id, similarity, photo_base64=None):
     """
-    Hàm phụ trợ: Lưu vào DB (Thường dùng cho API HTTP, còn Realtime socket dùng hàm riêng ở frontend)
+    Lưu điểm danh vào DB
+    - study_id: ID bản ghi trong bảng study
+    - similarity: Độ chính xác nhận diện (0.0 -> 1.0)
+    - photo_base64: Ảnh khuôn mặt dạng base64 (optional)
     """
     try:
         conn = pymysql.connect(
@@ -110,12 +137,47 @@ def save_attendance_to_db(study_id, similarity):
             charset="utf8mb4"
         )
         cursor = conn.cursor()
+        
+        # ⭐ KIỂM TRA ĐÃ ĐIỂM DANH CHƯA (Tránh trùng lặp)
+        cursor.execute(
+            "SELECT AttendanceID FROM attendance WHERE StudyID = %s AND Date = CURDATE()",
+            (study_id,)
+        )
+        
+        if cursor.fetchone():
+            conn.close()
+            return "Duplicate"  # Đã điểm danh rồi
+        
+        # ⭐ LƯU ĐIỂM DANH MỚI (Có PhotoPath)
         sql = """
             INSERT INTO attendance (StudyID, Date, Time, PhotoPath)
             VALUES (%s, CURDATE(), CURTIME(), %s)
         """
-        cursor.execute(sql, (study_id, str(similarity))) 
+        
+        # Nếu có ảnh thì lưu base64, không thì lưu similarity làm placeholder
+        photo_data = photo_base64 if photo_base64 else f"similarity_{similarity:.2f}"
+        
+        cursor.execute(sql, (study_id, photo_data))
         conn.commit()
         conn.close()
+        
+        return "Success"
+        
+    except pymysql.IntegrityError as e:
+        print(f"❌ DB IntegrityError: {e}")
+        return "Duplicate"
     except Exception as e:
-        print(f"ERROR save_attendance_to_db: {e}")
+        print(f"❌ ERROR save_attendance_to_db: {e}")
+        return "Error"
+
+
+def encode_image_to_base64(image_np_bgr):
+    """
+    Chuyển ảnh OpenCV (BGR) thành base64 string
+    """
+    try:
+        _, buffer = cv2.imencode('.jpg', image_np_bgr)
+        return base64.b64encode(buffer).decode('utf-8')
+    except Exception as e:
+        print(f"❌ Error encode_image_to_base64: {e}")
+        return None

@@ -83,7 +83,7 @@ def api_get_shifts(db: Session = Depends(get_db)):
     return [{"ShiftID": s.ShiftID, "ShiftName": s.ShiftName} for s in shifts]
 
 # ------------------ CLASSES OF TEACHER ------------------
-@router.get("/by_teacher/{id_login}")
+@router.get("/by_teacher/{id_login}", response_model=list[ClassOut])
 def get_classes_by_teacher(id_login: int, db: Session = Depends(get_db)):
     classes = (
         db.query(Class)
@@ -91,7 +91,7 @@ def get_classes_by_teacher(id_login: int, db: Session = Depends(get_db)):
         .filter(Teach.id_login == id_login)
         .all()
     )
-    return [c.__dict__ for c in classes]
+    return classes
 
 # ------------------ STUDENTS IN CLASS ------------------
 @router.get("/students_in_class/{class_id}")

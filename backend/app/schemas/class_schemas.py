@@ -57,3 +57,7 @@ class ClassOut(BaseModel):
     CourseCode: int | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+class ManualAttendanceRequest(BaseModel):
+    study_id: int
+    session_date: str
