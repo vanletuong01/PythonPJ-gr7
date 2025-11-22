@@ -1,88 +1,68 @@
-/* ===== HEADER FIXED ĐÈ LÊN SIDEBAR ===== */
-/* Ẩn default Streamlit header */
+/* 1. ẨN HEADER MẶC ĐỊNH CỦA STREAMLIT */
 header[data-testid="stHeader"] {
     display: none !important;
 }
 
-/* Container đầu tiên = Header gradient */
-.stApp>div:first-child>div:first-child>div:first-child {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    z-index: 999999 !important;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    padding: 12px 40px !important;
-    margin: 0 !important;
-    border-radius: 0 !important;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25) !important;
-    height: 85px !important;
-    /* Tăng chiều cao header */
-    display: flex !important;
-    align-items: center !important;
+/* 2. TẠO THANH BACKGROUND MÀU XANH CỐ ĐỊNH TRÊN CÙNG */
+.header-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    /* Chiều cao header */
+    background: #ffffff;
+    /* Nền trắng (hoặc đổi màu tùy ý) */
+    border-bottom: 1px solid #eee;
+    z-index: 999;
+    /* Nằm dưới input nhưng trên nội dung khác */
 }
 
-/* Main content padding để tránh header */
+/* 3. ĐẨY NỘI DUNG CHÍNH XUỐNG ĐỂ KHÔNG BỊ CHE */
 .main .block-container {
-    padding-top: 110px !important;
-    /* Tăng padding-top vì header cao hơn */
+    padding-top: 100px !important;
+    /* 80px header + 20px khoảng hở */
     max-width: 100% !important;
 }
 
-/* Sidebar padding để tránh header */
-section[data-testid="stSidebar"] {
-    padding-top: 95px !important;
-    /* Tăng padding-top vì header cao hơn */
+/* 4. XỬ LÝ CÁC Ô INPUT (QUAN TRỌNG) */
+/* Đoạn này chọn container chứa 3 cột input đầu tiên của trang */
+[data-testid="stVerticalBlock"]>[data-testid="stVerticalBlock"]>[data-testid="stHorizontalBlock"] {
+    position: fixed !important;
+    top: 15px !important;
+    /* Căn chỉnh độ cao so với top */
+    left: 350px !important;
+    /* Cách lề trái (tránh Sidebar) */
+    right: 40px !important;
+    /* Cách lề phải */
+    z-index: 1000 !important;
+    /* Nổi lên trên cùng */
+    background: transparent !important;
 }
 
-/* ===== LOGO TO HƠN ===== */
-.stApp>div:first-child img {
-    width: 400px !important;
-    height: auto !important;
-    margin-right: 15px !important;
+/* Nếu Sidebar bị ẩn (trên mobile hoặc khi đóng), cần chỉnh lại left */
+@media (max-width: 900px) {
+    [data-testid="stVerticalBlock"]>[data-testid="stVerticalBlock"]>[data-testid="stHorizontalBlock"] {
+        left: 20px !important;
+    }
 }
 
-/* Title text trong header */
-.stApp>div:first-child h3 {
-    color: white !important;
-    font-size: 22px !important;
-    /* Tăng từ 20px → 22px */
-    font-weight: 700 !important;
-    margin: 0 !important;
-    line-height: 1.2 !important;
-}
-
-/* ===== INPUTS TO HƠN ===== */
-.stApp>div:first-child input {
-    background: rgba(255, 255, 255, 0.95) !important;
-    border: 1.5px solid rgba(255, 255, 255, 0.5) !important;
+/* 5. STYLE CHO Ô INPUT ĐẸP HƠN (BO TRÒN) */
+div[data-baseweb="input"] {
+    background-color: #ffffff !important;
+    border: 1px solid #ccc !important;
     border-radius: 8px !important;
-    padding: 14px 20px !important;
-    /* Tăng padding từ 10px 16px */
-    font-size: 18px !important;
-    /* Tăng font từ 14px → 16px */
+    height: 42px !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Ẩn label mặc định của input để header gọn hơn (Tùy chọn) */
+.stTextInput label {
+    display: none !important;
+}
+
+/* Input text */
+input.st-ae {
     color: #333 !important;
-    height: 55px !important;
-    /* Tăng chiều cao từ 45px → 50px */
     font-weight: 500 !important;
-}
-
-.stApp>div:first-child input::placeholder {
-    color: #666 !important;
-    font-weight: 500 !important;
-    font-size: 15px !important;
-    /* Placeholder to hơn */
-}
-
-.stApp>div:first-child input:focus {
-    border-color: white !important;
-    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3) !important;
-    outline: none !important;
-}
-
-/* User icon styling */
-.stApp>div:first-child>div>div:last-child {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
 }

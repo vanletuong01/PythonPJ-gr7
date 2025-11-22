@@ -1,160 +1,163 @@
-/* Phóng to sidebar */
-section[data-testid="stSidebar"] {
-    width: 280px !important;
-    min-width: 280px !important;
-    padding-top: 90px !important;
+/* Ẩn các thành phần mặc định của Streamlit */
+#MainMenu,
+footer,
+header {
+    visibility: hidden;
 }
 
-section[data-testid="stSidebar"]>div {
-    background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
-    padding-top: 20px;
+/* Nền trắng toàn trang */
+.main {
+    background-color: #ffffff;
 }
 
-/* Header cố định đè lên sidebar */
-.header-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 999999;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 10px 30px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    height: 70px;
-}
-
-.header-left {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    flex-shrink: 0;
-}
-
-.header-logo {
-    width: 50px;
-    height: auto;
-}
-
-.header-text {
-    color: white;
-}
-
-.header-title {
-    font-size: 18px;
-    font-weight: 700;
-    line-height: 1.2;
-    white-space: nowrap;
-}
-
-.header-filters {
-    display: flex;
-    gap: 15px;
-    flex: 1;
-    max-width: 800px;
-}
-
-.header-right {
-    flex-shrink: 0;
-}
-
-.user-icon {
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    cursor: pointer;
-    transition: background 0.3s;
-}
-
-.user-icon:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-/* Main content margin top để tránh header */
-.main .block-container {
-    padding-top: 100px !important;
+.block-container {
+    padding-top: 1rem !important;
+    padding-bottom: 2rem !important;
     max-width: 100% !important;
 }
 
-/* === STYLE MỚI CHO NÚT CHI TIẾT === */
-button[kind="secondary"] {
-    /* 1. Màu sắc nhạt, tinh tế */
+/* --- 1. HEADER INPUTS --- */
+.simple-header input {
     background-color: #ffffff !important;
-    border: 1px solid #d1d5db !important;
-    /* Viền xám nhạt */
-    color: #374151 !important;
-    /* Chữ màu xám đậm */
-
-    /* 2. Kích thước nhỏ gọn (Slim) */
-    height: 30px !important;
-    /* Chiều cao cố định nhỏ */
-    min-height: 30px !important;
-    /* Ghi đè mặc định của Streamlit */
-    padding: 0px 10px !important;
-    /* Thu gọn lề trên dưới */
-
-    /* 3. Font chữ */
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    line-height: 28px !important;
-    /* Căn giữa chữ theo chiều dọc */
-
-    /* 4. Chống vỡ giao diện */
-    white-space: nowrap !important;
-    /* Bắt buộc chữ nằm trên 1 dòng */
-    border-radius: 4px !important;
-    /* Bo góc nhẹ */
-    box-shadow: none !important;
+    border: 1px solid #000 !important;
+    /* Viền đen */
+    border-radius: 30px !important;
+    /* Bo tròn */
+    color: #333 !important;
+    height: 46px !important;
+    padding-left: 20px !important;
 }
 
-/* Hiệu ứng khi di chuột vào (Hover) */
-button[kind="secondary"]:hover {
-    border-color: #667eea !important;
-    /* Viền xanh tím */
-    color: #667eea !important;
-    /* Chữ xanh tím */
-    background-color: #f9fafb !important;
-    /* Nền hơi xám nhẹ */
+/* --- 2. STYLE NÚT RELOAD (TẢI LẠI) --- */
+/* Style đặc biệt để nút nhỏ gọn, tròn trịa */
+div[data-testid="column"] button {
+    border-radius: 30px !important;
+    height: 46px !important;
+    width: 100% !important;
+    border: 1px solid #ddd !important;
+    background-color: #f8f9fa !important;
+    color: #333 !important;
+    transition: all 0.3s !important;
 }
 
-/* Khi đang bấm nút */
-button[kind="secondary"]:active {
-    background-color: #f3f4f6 !important;
-    transform: translateY(1px);
-    /* Hiệu ứng nhún nhẹ */
+div[data-testid="column"] button:hover {
+    border-color: #3b82f6 !important;
+    color: #3b82f6 !important;
+    background-color: #fff !important;
 }
 
-/* Button primary */
-button[kind="primary"] {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    color: white !important;
+/* --- 3. CARD DANH SÁCH (Container chính) --- */
+.student-list-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e5e7eb;
+    font-family: sans-serif;
+    height: 100%;
 }
 
-/* Dataframe */
-div[data-testid="stDataFrame"] {
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
+/* Header của Card (Tiêu đề + Sĩ số) */
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
 }
 
-/* Metric cards */
-div[data-testid="stMetric"] {
-    background: white;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+.list-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
 }
 
-/* Chart titles */
-h3 {
-    color: #2c3e50;
+/* Badge Sĩ số (Khung bo tròn) */
+.badge-count {
+    border: 1px solid #374151;
+    border-radius: 20px;
+    padding: 2px 12px;
+    font-size: 13px;
     font-weight: 600;
-    margin-bottom: 1rem;
+    color: #374151;
+    background-color: #fff;
+}
+
+/* Header của Bảng (STT, HỌ TÊN, MSSV) */
+.list-table-header {
+    display: flex;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #f3f4f6;
+    margin-bottom: 5px;
+    color: #9ca3af;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* --- 4. KHU VỰC CUỘN (SCROLL AREA) --- */
+.student-scroll-area {
+    height: 350px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+/* Thanh cuộn đẹp (Webkit) */
+.student-scroll-area::-webkit-scrollbar {
+    width: 5px;
+}
+
+.student-scroll-area::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.student-scroll-area::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+}
+
+.student-scroll-area::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* --- 5. DÒNG SINH VIÊN (ROW) --- */
+.student-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 14px;
+    color: #374151;
+    transition: background 0.2s;
+}
+
+.student-row:hover {
+    background-color: #f9fafb;
+}
+
+/* Căn chỉnh cột cho thẳng hàng */
+.col-stt {
+    width: 15%;
+    text-align: center;
+    color: #9ca3af;
+}
+
+.col-name {
+    width: 55%;
+    font-weight: 500;
+    color: #111827;
+}
+
+.col-code {
+    width: 30%;
+    text-align: right;
+    font-family: monospace;
+    color: #6b7280;
+}
+
+/* Trạng thái trống */
+.empty-state {
+    text-align: center;
+    color: #9ca3af;
+    padding: 80px 0;
+    font-style: italic;
 }

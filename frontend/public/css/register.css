@@ -1,120 +1,180 @@
-    /* Hide default streamlit elements */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    
-    /* Hide sidebar completely with all navigation */
-    [data-testid="stSidebar"] {
-        display: none !important;
-    }
-    
-    section[data-testid="stSidebar"] {
-        display: none !important;
-    }
-    
-    [data-testid="stSidebarNav"] {
-        display: none !important;
-    }
-    
-    nav {
-        display: none !important;
-    }
-    
-    .css-1d391kg {
-        display: none !important;
-    }
-    
-    .main {
-        padding: 0 !important;
-        background: white;
-    }
-    
-    .block-container {
-        padding: 2rem 1rem !important;
-        max-width: 100% !important;
-    }
-    
-    /* Register container */
-    .register-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        gap: 50px;
-    }
-    
-    .register-left {
-        flex: 1;
-        text-align: center;
-    }
-    
-    .register-right {
-        flex: 1;
-        max-width: 400px;
-    }
-    
-    .register-illustration {
-        max-width: 100%;
-        height: auto;
-    }
-    
-    .logo-register {
-        width: 120px;
-        margin-bottom: 20px;
-    }
-    
-    .register-title {
-        font-size: 28px;
-        font-weight: 700;
-        color: #333;
-        margin-bottom: 10px;
-    }
-    
-    .register-subtitle {
-        font-size: 14px;
-        color: #888;
-        margin-bottom: 30px;
-    }
-    
-    /* Form styling */
-    .stTextInput > label {
-        font-size: 14px;
-        color: #333;
-        font-weight: 500;
-    }
-    
-    .stTextInput > div > div > input {
-        border-radius: 8px;
-        border: 1px solid #ddd;
-        padding: 12px;
-        font-size: 14px;
-    }
-    
-    .stButton > button {
-        width: 100%;
-        background: #000;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 14px;
-        font-weight: 600;
-        font-size: 15px;
-        margin-top: 10px;
-    }
-    
-    .stButton > button:hover {
-        background: #333;
-    }
-    
-    .login-link {
-        text-align: center;
-        margin-top: 20px;
-        font-size: 13px;
-        color: #666;
-    }
-    
-    .login-link a {
-        color: #667eea;
-        text-decoration: none;
-        font-weight: 600;
-    }
+/* --- 1. ẨN GIAO DIỆN MẶC ĐỊNH --- */
+#MainMenu,
+footer,
+header {
+    visibility: hidden;
+}
+
+[data-testid="stSidebar"],
+section[data-testid="stSidebar"],
+[data-testid="stSidebarNav"],
+nav,
+.css-1d391kg {
+    display: none !important;
+}
+
+.main {
+    padding: 0 !important;
+    background: white;
+}
+
+.block-container {
+    padding: 0 !important;
+    max-width: 100% !important;
+}
+
+img {
+    max-width: none !important;
+}
+
+/* --- 2. LOGO & TITLE --- */
+.register-logo-wrapper {
+    text-align: center;
+}
+
+.register-logo {
+    width: 130px !important;
+    height: auto !important;
+    display: block;
+    margin: 0 auto 20px auto;
+}
+
+.register-title-block {
+    margin-bottom: 32px !important;
+}
+
+/* --- 3. INPUT FIELDS --- */
+.stTextInput>label {
+    font-size: 14px !important;
+    color: #333 !important;
+    font-weight: 500 !important;
+    display: block !important;
+}
+
+/* Ô nhập liệu */
+.stTextInput>div>div>input {
+    border-radius: 8px !important;
+    border: 1px solid #ddd !important;
+    padding: 10px 12px !important;
+    font-size: 14px !important;
+    /* Padding phải lớn để chữ không chui xuống dưới nút mắt */
+    padding-right: 45px !important;
+    position: relative !important;
+    z-index: 1 !important;
+    /* Input nằm dưới */
+}
+
+/* Container Input: Rộng 350px, căn giữa */
+.stTextInput,
+[data-testid="stForm"] {
+    max-width: 350px !important;
+    margin: 0 auto !important;
+    position: relative !important;
+}
+
+.stTextInput {
+    margin-bottom: 10px !important;
+}
+
+/* Ẩn hướng dẫn "Press Enter" */
+[data-testid="InputInstructions"] {
+    display: none !important;
+}
+
+
+/* --- 4. [CỰC KỲ QUAN TRỌNG] SỬA LỖI NÚT MẮT (EYE ICON) --- */
+
+/* Reset toàn bộ thuộc tính nút bấm cho nút mắt */
+[data-testid="stPasswordVisibilityButton"] {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    /* Đặt vị trí tuyệt đối để không bị trôi */
+    position: absolute !important;
+    right: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+
+    /* Reset kích thước để không bị ảnh hưởng bởi nút Register to */
+    width: 30px !important;
+    min-width: auto !important;
+    /* Quan trọng: chống bị kéo giãn */
+    height: 30px !important;
+
+    /* Giao diện */
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    color: #666 !important;
+
+    /* Lớp phủ & Click */
+    z-index: 999 !important;
+    /* Nổi lên trên cùng */
+    cursor: pointer !important;
+    pointer-events: auto !important;
+    /* Bắt buộc để nhận click */
+}
+
+/* Hiệu ứng hover cho mắt */
+[data-testid="stPasswordVisibilityButton"]:hover {
+    color: #000 !important;
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-radius: 50% !important;
+}
+
+/* Đảm bảo icon SVG bên trong cũng nhận click */
+[data-testid="stPasswordVisibilityButton"] svg {
+    pointer-events: none !important;
+    /* Để click xuyên qua icon vào nút button cha */
+    width: 18px !important;
+    height: 18px !important;
+}
+
+
+/* --- 5. NÚT REGISTER (SUBMIT FORM) --- */
+/* Chỉ chọn nút Submit, không chọn nhầm nút mắt */
+[data-testid="stFormSubmitButton"]>button {
+    background: #e0f0ff !important;
+    color: #0a2540 !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 10px 12px !important;
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    margin-top: 10px !important;
+    width: 100% !important;
+    max-width: 350px !important;
+    display: block !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+[data-testid="stFormSubmitButton"]>button:hover {
+    background: #b6e0fe !important;
+}
+
+/* --- 6. NÚT LOGIN (BÊN DƯỚI) --- */
+div:not([data-testid="stForm"])>.element-container .stButton {
+    max-width: 350px !important;
+    margin: 0 auto !important;
+}
+
+div:not([data-testid="stForm"])>.element-container .stButton>button {
+    background: #ffebee !important;
+    color: #c62828 !important;
+    border: 1px solid #ffcdd2 !important;
+    border-radius: 10px !important;
+    padding: 10px 12px !important;
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    margin-top: 8px !important;
+    width: 100% !important;
+    display: block !important;
+}
+
+div:not([data-testid="stForm"])>.element-container .stButton>button:hover {
+    background: #ffcdd2 !important;
+    color: #b71c1c !important;
+}

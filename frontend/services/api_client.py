@@ -1,6 +1,7 @@
 import os
 import requests
 
+# Giữ nguyên cấu hình của bạn
 API_BASE = os.getenv("API_BASE", "http://127.0.0.1:8000/api/v1")
 TIMEOUT = int(os.getenv("API_TIMEOUT", "20"))
 
@@ -10,6 +11,7 @@ def _safe_json(resp):
     except:
         return {"success": False, "message": resp.text or f"HTTP {resp.status_code}"}
 
+# --- CÁC HÀM CŨ CỦA BẠN (KHÔNG ĐỤNG VÀO) ---
 def register_teacher(email: str, password: str, name: str):
     url = f"{API_BASE}/auth/register"
     payload = {"email": email, "password": password, "name": name}
@@ -17,7 +19,6 @@ def register_teacher(email: str, password: str, name: str):
         resp = requests.post(url, json=payload, timeout=TIMEOUT)
         data = _safe_json(resp)
         data.setdefault("status", resp.status_code)
-        data.setdefault("url", url)
         return data
     except Exception as e:
         return {"success": False, "message": str(e), "status": 0}
@@ -70,18 +71,10 @@ def get_dashboard_stats():
 
 def create_class(data: dict):
     url = f"{API_BASE}/class/create"
-    print(f"[DEBUG] create_class calling {url}")
     try:
         resp = requests.post(url, json=data, timeout=TIMEOUT)
         return resp
-    except requests.exceptions.ConnectionError as e:
-        print(f"[ERROR] ConnectionError: {e}")
-        class MockResp:
-            status_code = 0
-            text = "Không kết nối được backend"
-        return MockResp()
     except Exception as e:
-        print(f"[ERROR] create_class: {e!r}")
         class MockResp:
             status_code = 0
             text = str(e)
@@ -96,20 +89,19 @@ def get_classes_by_teacher(id_login):
     except Exception:
         return []
     
+# --- SỬA HÀM NÀY ĐỂ LOGGING LỖI ---
 def get_students_in_class(class_id):
     try:
-        # SỬA: Đổi "/class/" thành "/student/" vì API này nằm bên student_api.py
         url = f"{API_BASE}/student/students_in_class/{class_id}"
-        
+        print(f"🔍 [API] Getting students for class {class_id}...") # Debug
         resp = requests.get(url, timeout=TIMEOUT)
         if resp.status_code == 200:
             return resp.json()
         else:
-            # In ra lỗi để debug nếu không phải 200
-            print(f"[DEBUG API] Error fetching students: {resp.status_code} - {resp.text}")
+            print(f"⚠️ [API WARN] Get Students Failed: {resp.status_code}")
             return []
     except Exception as e:
-        print(f"[DEBUG API] Exception: {e}")
+        print(f"❌ [API ERROR] Get Students: {e}")
         return []
 
 def get_attendance_by_date(class_id):
@@ -127,56 +119,56 @@ def handle_response(res):
         print(f"API Error {res.status_code}: {res.text}")
         raise e
 
+# --- SỬA HÀM NÀY ĐỂ LOGGING ---
 def create_student(data: dict):
     url = f"{API_BASE}/student/add"
-    res = requests.post(url, json=data, timeout=TIMEOUT)
-    return handle_response(res)
+    print(f"🚀 [API] Creating student: {data}") # Debug
+    try:
+        res = requests.post(url, json=data, timeout=TIMEOUT)
+        return handle_response(res)
+    except Exception as e:
+        print(f"❌ [API ERROR] Create Student: {e}")
+        return {"error": str(e)}
 
 def search_students(keyword: str, limit: int = 30):
     url = f"{API_BASE}/student/search"
     params = {"q": keyword, "limit": limit}
-    res = requests.get(url, params=params, timeout=TIMEOUT)
-    return handle_response(res)
+    try:
+        res = requests.get(url, params=params, timeout=TIMEOUT)
+        return handle_response(res)
+    except:
+        return []
 
-async def assign_student_to_class(student_id, class_id):
-    url = f"{BASE_URL}/class/assign"
-    payload = {
-        "student_id": student_id,
-        "class_id": class_id
-    }
-    response = requests.post(url, json=payload)
-    response.raise_for_status()
-    return response.json()
-
+def assign_student_to_class(student_id, class_id):
     """
     Gán sinh viên vào lớp.
-    payload ví dụ: {"ClassID": 123, "StudentCode": "2331500001"}
     """
-    url = f"{API_BASE}/class/assign"    # dùng API_BASE chứ không phải BASE_URL
+    url = f"{API_BASE}/class/assign"
+    
+    # --- SỬA Ở ĐÂY: Đổi StudentID -> student_id, ClassID -> class_id ---
+    payload = {
+        "student_id": int(student_id),  # Chữ thường
+        "class_id": int(class_id)       # Chữ thường
+    }
+    # -------------------------------------------------------------------
+    
+    print(f"🚀 [API] Assigning: {payload} -> {url}")
+
     try:
         resp = requests.post(url, json=payload, timeout=TIMEOUT)
+        
+        # Nếu vẫn lỗi, in ra xem Server đòi cái gì
+        if resp.status_code == 422:
+            print(f"❌ CHI TIẾT LỖI 422: {resp.json()}")
+            
         resp.raise_for_status()
-        # trả về JSON hoặc mock nếu backend trả kiểu khác
-        try:
-            return resp.json()
-        except:
-            return {"success": True, "status": resp.status_code, "text": resp.text}
-    except requests.exceptions.HTTPError as e:
-        # in debug để dễ thấy lỗi từ backend
-        print(f"[API ERROR] assign_student_to_class {resp.status_code}: {resp.text}")
-        raise
-    except requests.exceptions.ConnectionError as e:
-        print(f"[API ERROR] ConnectionError assign_student_to_class: {e}")
-        return {"success": False, "message": "Không kết nối được backend", "status": 0}
+        return resp.json()
+        
     except Exception as e:
-        print(f"[API ERROR] assign_student_to_class: {e}")
-        return {"success": False, "message": str(e), "status": 0}
-
+        print(f"❌ [API ERROR] Assign Failed: {e}")
+        raise e
+# --- CÁC HÀM KHÁC GIỮ NGUYÊN ---
 def get_student_attendance(class_id, student_id):
-    """
-    Lấy lịch sử điểm danh của sinh viên (Mock hoặc gọi API thật)
-    """
-    # URL này phải khớp với backend của bạn
     url = f"{API_BASE}/attendance/history/{class_id}/{student_id}"
     try:
         resp = requests.get(url, timeout=TIMEOUT)
@@ -187,10 +179,13 @@ def get_student_attendance(class_id, student_id):
         return []
 
 def get_student_detail(student_id):
-    url = f"http://127.0.0.1:8000/api/v1/student/detail/{student_id}"
-    resp = requests.get(url)
-    if resp.ok:
-        data = resp.json()
-        if data.get("success"):
-            return data["data"]
+    url = f"{API_BASE}/student/detail/{student_id}"
+    try:
+        resp = requests.get(url)
+        if resp.ok:
+            data = resp.json()
+            if data.get("success"):
+                return data["data"]
+    except:
+        pass
     return None

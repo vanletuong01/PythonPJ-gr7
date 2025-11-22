@@ -53,7 +53,28 @@ def search_students(q: str = Query(..., min_length=1), limit: int = 30, db: Sess
 
 @router.post("/add")
 def add_student(data: StudentCreate, db: Session = Depends(get_db)):
-    return create_student(db, data)
+    # Kiểm tra trùng MSSV
+    existing = db.query(Student).filter(Student.StudentCode == data.StudentCode).first()
+    if existing:
+        return {"success": False, "detail": "MSSV đã tồn tại"}
+    # Tạo mới
+    student = Student(
+        FullName=data.FullName,
+        StudentCode=data.StudentCode,
+        DefaultClass=data.DefaultClass,
+        Phone=data.Phone,
+        AcademicYear=data.AcademicYear,
+        DateOfBirth=data.DateOfBirth,
+        CitizenID=data.CitizenID,
+        MajorID=data.MajorID,
+        TypeID=data.TypeID,
+        PhotoStatus=data.PhotoStatus,
+        StudentPhoto=data.StudentPhoto
+    )
+    db.add(student)
+    db.commit()
+    db.refresh(student)
+    return {"success": True, "student_id": student.StudentID}
 
 @router.get("/detail/{student_id}")
 def api_get_student_detail(student_id: int, db: Session = Depends(get_db)):

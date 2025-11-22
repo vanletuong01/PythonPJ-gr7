@@ -1,54 +1,25 @@
 import streamlit as st
-from pathlib import Path
 
 def render_header(class_name="", full_class_name="", course_code="", class_id=None):
-    header_container = st.container()
-    key_prefix = f"{class_id}_" if class_id else ""
-    with header_container:
-        col1, col2, col3, col4, col5 = st.columns([2.5, 1.7, 1.7, 1.7, 2])
+    
+    # Tạo một lớp nền background cho header (xử lý bằng CSS)
+    st.markdown('<div class="header-background"></div>', unsafe_allow_html=True)
 
-        # Cột 1: Title (bỏ logo)
+    # Container chứa các ô input
+    with st.container():
+        # Thêm class để CSS target vào container này đẩy nó lên trên
+        st.markdown('<div class="header-input-container">', unsafe_allow_html=True)
+        
+        # CHIA 3 CỘT ĐỀU NHAU (BỎ 2 CỘT RỖNG 2 BÊN ĐI)
+        col1, col2, col3 = st.columns([1, 1, 1], gap="medium")
+
         with col1:
-            st.markdown("""
-            <div style='color:white;margin-top:14px'>
-                <h3 style='margin:0;font-size:20px;font-weight:700;line-height:1.2'>
-                    VIETNAM AVIATION ACADEMY
-                </h3>
-            </div>
-            """, unsafe_allow_html=True)
+            st.text_input("Mã lớp", value=class_name, disabled=True, key=f"class_name_{class_id}", placeholder="Lớp")
 
-        # Cột 2: Filter Lớp
         with col2:
-            filter_lop = st.text_input(
-                "Lớp", 
-                value=class_name,
-                placeholder="Lớp:", 
-                key=f"{key_prefix}filter_class",
-                label_visibility="collapsed"
-            )
+            st.text_input("Tên môn học", value=full_class_name, disabled=True, key=f"full_class_name_{class_id}", placeholder="Môn học")
 
-        # Cột 3: Filter Môn
         with col3:
-            filter_mon = st.text_input(
-                "Môn", 
-                value=full_class_name,
-                placeholder="Môn:", 
-                key=f"{key_prefix}filter_subject",
-                label_visibility="collapsed"
-            )
-
-        # Cột 4: Filter Mã môn học
-        with col4:
-            filter_ma_mon = st.text_input(
-                "Mã môn học", 
-                value=str(course_code) if course_code else "",
-                placeholder="Mã môn học:", 
-                key=f"{key_prefix}filter_code",
-                label_visibility="collapsed"
-            )
-
-        # Cột 5: Spacer (bỏ user icon)
-        with col5:
-            st.write("")
-
-    return filter_lop, filter_mon, filter_ma_mon
+            st.text_input("Mã môn", value=course_code, disabled=True, key=f"course_code_{class_id}", placeholder="Mã HP")
+            
+        st.markdown('</div>', unsafe_allow_html=True)

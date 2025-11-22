@@ -69,50 +69,59 @@ img {
     font-size: 14px !important;
 }
 
+/* Cấu hình chung cho Input: Max width 350px và căn giữa */
 .stTextInput {
     max-width: 350px !important;
     margin: 0 auto !important;
 }
 
-/* Nút Login: nền xanh nhạt */
-button[key="login_btn"] {
-    width: 250px !important;
-    max-width: 250px !important;
+/* Cấu hình chung cho Container của Button: Max width 350px và căn giữa để bằng Input */
+.stButton {
+    max-width: 350px !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    display: block !important;
+}
+
+/* --- NÚT LOGIN (Nút đầu tiên) --- */
+/* Chọn div.stButton đầu tiên trong cột */
+.stButton:nth-of-type(1) button {
     background: #e0f0ff !important;
-    /* xanh nhạt */
+    /* Xanh nhạt */
     color: #0a2540 !important;
-    /* chữ xanh đậm */
     border: none !important;
     border-radius: 10px !important;
-    padding: 18px 12px !important;
+    padding: 10px 12px !important;
     font-weight: 600 !important;
     font-size: 16px !important;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
-    display: block !important;
-    margin: 16px auto 0 auto !important;
-}
-
-button[key="login_btn"]:hover {
-    background: #b6e0fe !important;
-    /* xanh nhạt đậm hơn khi hover */
-}
-
-/* Nút Register: nền đỏ cam */
-button[key="go_to_register"] {
-    background: linear-gradient(90deg, #ff512f 0%, #f09819 100%) !important;
-    color: #fff !important;
-    padding: 10px 0 !important;
     width: 100% !important;
-    font-size: 15px !important;
-    font-weight: 600 !important;
-    border: none !important;
-    border-radius: 8px !important;
-    box-shadow: none !important;
-    margin-top: 8px !important;
+    margin-top: 16px !important;
 }
 
-button[key="go_to_register"]:hover {
-    filter: brightness(0.95) !important;
-    color: #fff !important;
-    text-decoration: none !important;
+.stButton:nth-of-type(1) button:hover {
+    background: #b6e0fe !important;
+}
+
+/* --- NÚT REGISTER (Nút thứ hai) --- */
+/* Chọn div.stButton thứ hai trong cột */
+.stButton:nth-of-type(2) button {
+    background: #ffebee !important;
+    /* Đỏ nhạt (hồng phấn) */
+    color: #c62828 !important;
+    /* Chữ đỏ đậm */
+    border: 1px solid #ffcdd2 !important;
+    border-radius: 10px !important;
+    padding: 10px 12px !important;
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    width: 100% !important;
+    margin-top: 0px !important;
+}
+
+.stButton:nth-of-type(2) button:hover {
+    background: #ffcdd2 !important;
+    /* Đậm hơn khi hover */
+    color: #b71c1c !important;
+    border-color: #ef9a9a !important;
 }

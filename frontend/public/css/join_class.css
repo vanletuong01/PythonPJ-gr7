@@ -1,143 +1,112 @@
-/* join_class.css - style theo layout Figma (phiên bản A) */
-
-/* Toàn trang */
-
-body .stApp .page-title {
-    font-size: 32px;
-    font-weight: 700;
-    margin-bottom: 18px;
-    color: #222 !important;
+/* --- RESET CƠ BẢN --- */
+#MainMenu {
+    visibility: hidden;
 }
 
+footer {
+    visibility: hidden;
+}
 
-/* Page title */
+header {
+    visibility: hidden;
+}
+
+/* Hiện Sidebar mặc định */
+[data-testid="stSidebar"] {
+    display: block !important;
+}
+
+/* Padding main */
+.main .block-container {
+    padding-top: 2rem !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    max-width: 100% !important;
+}
+
+/* --- TYPOGRAPHY --- */
 .page-title {
-    font-size: 32px;
-    font-weight: 700;
-    margin-bottom: 18px;
-    color: #222;
+    font-size: 28px;
+    font-weight: 800;
+    color: #0a2540;
+    margin: 0;
 }
 
-/* Layout container bên phải (card) */
-.class-card {
-    background: #f5f6f8;
-    border-radius: 12px;
-    padding: 22px;
-    margin-top: 18px;
-    box-shadow: 0 4px 18px rgba(20, 20, 20, 0.04);
-}
-
-/* Các ô select / input dạng hộp trắng / bo góc */
-div[data-testid="stSelectbox"],
-div[data-testid="stTextInput"],
-div[data-testid="stDateInput"] {
-    margin-bottom: 14px;
-}
-
-/* Thực tế target các input và select */
-input,
-select,
-textarea {
-    border-radius: 10px !important;
-    background: #eef0f3 !important;
-    border: none !important;
-    padding: 14px 16px !important;
-    height: 46px !important;
-    box-shadow: none !important;
-    color: #333 !important;
-    font-size: 14px !important;
-}
-
-/* Placeholder style */
-input::placeholder,
-textarea::placeholder {
-    color: #9aa0a6 !important;
-}
-
-/* Search row: make the search input bigger and button at right */
-.css-search-row {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    margin-top: 8px;
-    margin-bottom: 18px;
-}
-
-/* Make the search input fill the space */
-.css-search-row .search-input {
-    flex: 1;
-}
-
-/* Search button */
-.css-search-row .search-btn>button {
-    background: #d6d6d6 !important;
-    color: #222 !important;
-    border-radius: 8px !important;
-    padding: 10px 20px !important;
-    height: 46px !important;
-    border: none !important;
-    font-weight: 600;
-}
-
-/* Filter row spacing */
-.css-filter-row .stSelectbox,
-.css-filter-row .stTextInput {
-    margin-bottom: 6px;
-}
-
-/* Info fields inside card should be full width and spaced */
-.class-card .stTextInput,
-.class-card .stSelectbox,
-.class-card .stDateInput {
-    margin-bottom: 12px;
-}
-
-/* START button style */
-div[data-testid="stButton"]>button {
-    background: #cfcfcf !important;
-    color: #111 !important;
-    font-weight: 700 !important;
-    border-radius: 8px !important;
-    padding: 10px 14px !important;
-    height: 44px !important;
-    box-shadow: none !important;
-}
-
-/* Small help text under the button */
-.help-text {
-    margin-top: 12px;
-    font-size: 13px;
+.page-subtitle {
+    font-size: 14px;
     color: #666;
-    text-align: center;
+    margin-bottom: 20px;
 }
 
-/* Link style */
-.help-text a {
-    color: #d00;
-    font-weight: 600;
-    text-decoration: none;
+/* --- INPUT FIELDS --- */
+/* Làm đẹp ô nhập liệu */
+.stTextInput input,
+.stSelectbox div[data-baseweb="select"]>div {
+    border-radius: 8px !important;
+    border: 1px solid #e0e0e0 !important;
+    background-color: #ffffff !important;
+    height: 46px !important;
+    color: #333 !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02) !important;
+    /* Bóng nhẹ cho input */
 }
 
-/* Make left sidebar area visually separated (render_auth_sidebar remains untouched) */
-.left-sidebar {
-    padding: 20px 28px;
-    min-height: 100vh;
-    background: #ffffff;
-    border-right: 1px solid rgba(0, 0, 0, 0.03);
+/* Khi bấm vào input */
+.stTextInput input:focus,
+.stSelectbox div[data-baseweb="select"]>div:focus-within {
+    border-color: #0a2540 !important;
+    box-shadow: 0 0 0 1px #0a2540 !important;
 }
 
-/* Responsive tweaks */
-@media (max-width: 1000px) {
-    .class-card {
-        padding: 16px;
-    }
+/* Label nhỏ gọn */
+.stTextInput label,
+.stSelectbox label {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #555 !important;
+    margin-bottom: 4px !important;
+}
 
-    .page-title {
-        font-size: 24px;
-    }
+/* Input bị Disabled (trong phần thông tin) */
+.stTextInput input:disabled {
+    background-color: #f4f6f8 !important;
+    /* Màu nền xám nhạt cho ô thông tin */
+    color: #333 !important;
+    border-color: #eee !important;
+}
 
-    input,
-    select {
-        height: 44px !important;
-    }
+/* --- BUTTONS --- */
+/* Nút Tìm kiếm */
+div[data-testid="column"] button {
+    border-radius: 8px !important;
+    height: 46px !important;
+    font-weight: 600 !important;
+    margin-top: 0px !important;
+    /* Căn chỉnh với input */
+}
+
+/* Nút START (Màu xanh đậm) */
+button[key="start_btn"] {
+    background: linear-gradient(135deg, #0a2540 0%, #1a3b5e 100%) !important;
+    color: white !important;
+    border: none !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 4px 10px rgba(10, 37, 64, 0.2) !important;
+}
+
+button[key="start_btn"]:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 15px rgba(10, 37, 64, 0.3) !important;
+}
+
+/* Tiêu đề phần thông tin */
+h3 {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    color: #222 !important;
+    margin-bottom: 15px !important;
 }

@@ -44,31 +44,28 @@ with col2:
     email = st.text_input("Email", placeholder="Enter your email")
     password = st.text_input("Password", type="password", placeholder="••••••••")
 
-    # Button login căn giữa
-    col_empty1, col_btn, col_empty2 = st.columns([1, 2, 1])
-    with col_btn:
-        if st.button("Login", key="login_btn"):
-            if not (email and password):
-                st.error("Vui lòng nhập email và mật khẩu")
+    # Button login căn giữa - Đã bỏ columns thừa để CSS xử lý full width
+    if st.button("Login", key="login_btn", use_container_width=True):
+        if not (email and password):
+            st.error("Vui lòng nhập email và mật khẩu")
+        else:
+            result = login_teacher(email, password)
+            if result and result.get("success"):
+                st.success("Đăng nhập thành công!")
+                st.session_state.logged_in = True
+                st.session_state.teacher = {
+                    "id_login": result.get("id_login"),
+                    "email": result.get("email"),
+                    "name": result.get("name"),
+                    "phone": result.get("phone"),
+                }
+                st.switch_page("app.py")
             else:
-                result = login_teacher(email, password)
-                if result and result.get("success"):
-                    st.success("Đăng nhập thành công!")
-                    st.session_state.logged_in = True
-                    st.session_state.teacher = {
-                        "id_login": result.get("id_login"),
-                        "email": result.get("email"),
-                        "name": result.get("name"),
-                        "phone": result.get("phone"),
-                    }
-                    st.switch_page("app.py")
-                else:
-                    st.error(f"{result.get('message', 'Đăng nhập thất bại')}")
+                st.error(f"{result.get('message', 'Đăng nhập thất bại')}")
 
     # Register căn giữa
-    st.markdown('<div style="text-align:center;margin-top:18px;font-size:14px;color:#777;">Don\'t have an account?</div>', unsafe_allow_html=True)
+    st.markdown('<div style="text-align:center;margin-top:18px;margin-bottom:8px;font-size:14px;color:#777;">Don\'t have an account?</div>', unsafe_allow_html=True)
     
-    col_reg1, col_reg2, col_reg3 = st.columns([1.5, 1, 1.5])
-    with col_reg2:
-        if st.button("Register", key="go_to_register"):
-            st.switch_page("pages/register.py")
+    # Nút Register - Đã bỏ columns thừa
+    if st.button("Register", key="go_to_register", use_container_width=True):
+        st.switch_page("pages/register.py")

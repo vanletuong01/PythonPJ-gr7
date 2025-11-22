@@ -16,24 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-try:
-    from frontend.components.header import render_header
-except:
-    def render_header(): st.write("")
-
-# Import AI
-try:
-    import backend.app.ai.smart_face_attendance as ai_module
-    importlib.reload(ai_module)
-    match_image_and_check_real = ai_module.match_image_and_check_real
-except ImportError:
-    st.error("⚠️ Lỗi module AI.")
-    st.stop()
-
-st.set_page_config(page_title="Điểm Danh Realtime", page_icon="✅", layout="wide")
-render_header()
-
-# CSS
+# ===== CSS =====
 st.markdown("""
     <style>
         .main-title {text-align: center; color: #d90429; font-weight: bold; margin-bottom: 10px;}
@@ -44,6 +27,36 @@ st.markdown("""
         }
     </style>
 """, unsafe_allow_html=True)
+
+# ===== LẤY THÔNG TIN LỚP TỪ DASHBOARD =====
+from services.api_client import get_classes
+classes = get_classes() or []
+selected_class_id = st.session_state.get("selected_class_id")
+class_info = {}
+
+if selected_class_id:
+    found_class = next((c for c in classes if str(c.get("ClassID")) == str(selected_class_id)), None)
+    if found_class:
+        class_info = found_class
+
+# ===== HEADER MỚI =====
+h_col1, h_col2 = st.columns([0.5, 9.5])
+with h_col1:
+    if st.button("←", key="btn_back_att", help="Quay lại Dashboard"):
+        st.session_state["data_refresh_needed"] = True
+        st.switch_page("pages/dashboard.py")
+with h_col2:
+    st.markdown('<h3 class="page-header-title">ĐIỂM DANH LỚP</h3>', unsafe_allow_html=True)
+
+c_info1, c_info2, c_info3 = st.columns(3)
+with c_info1:
+    st.text_input("Lớp:", value=class_info.get("ClassName", ""), disabled=True)
+with c_info2:
+    st.text_input("Môn:", value=class_info.get("FullClassName", "") or class_info.get("SubjectName", ""), disabled=True)
+with c_info3:
+    st.text_input("Mã môn học:", value=class_info.get("CourseCode", ""), disabled=True)
+
+st.markdown("<div style='margin-bottom: 15px;'></div>", unsafe_allow_html=True)
 
 selected_class_id = st.session_state.get("selected_class_id")
 if not selected_class_id:

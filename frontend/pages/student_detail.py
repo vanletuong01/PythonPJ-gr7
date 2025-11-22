@@ -56,7 +56,7 @@ render_header(
 c_back, c_rest = st.columns([1, 6])
 with c_back:
     if st.button("⬅️ Quay lại Dashboard", use_container_width=True):
-        st.switch_page("dashboard.py")
+        st.switch_page("pages/dashboard.py")
 
 # ===== FORM THÔNG TIN =====
 st.markdown("<div class='student-detail-container'>", unsafe_allow_html=True)

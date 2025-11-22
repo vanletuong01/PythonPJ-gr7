@@ -1,48 +1,110 @@
-.add-class-form {
-    background: #f7f7f7;
-    border-radius: 8px;
-    padding: 32px 24px 24px 24px;
-    margin-top: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    max-width: 600px;
-    margin-left: auto;
-    margin-right: auto;
+/* Ẩn các thành phần mặc định */
+#MainMenu {
+    visibility: hidden;
 }
 
-.add-class-form label {
-    font-weight: 500;
-    margin-bottom: 4px;
+footer {
+    visibility: hidden;
 }
 
-.add-class-form .row-flex {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 12px;
+header {
+    visibility: hidden;
 }
 
-.add-class-form .row-flex>div {
-    flex: 1;
+
+
+.main .block-container {
+    padding-top: 2rem !important;
+    max-width: 100% !important;
 }
 
-.add-class-form .save-btn {
-    width: 100%;
-    font-size: 18px;
-    font-weight: bold;
-    margin-top: 18px;
-    background: #888;
-    color: #fff;
-    border-radius: 6px;
-    border: none;
-    padding: 10px 0;
+/* Nút Quay lại */
+div[data-testid="stButton"][key="back_home"] button {
+    background: transparent !important;
+    border: 1px solid #ddd !important;
+    font-size: 20px !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    color: #333 !important;
+    line-height: 1 !important;
 }
 
-.add-class-form .note {
-    text-align: right;
-    font-size: 13px;
-    margin-top: 10px;
+div[data-testid="stButton"][key="back_home"] button:hover {
+    background: #f0f0f0 !important;
+    border-color: #aaa !important;
 }
 
-.add-class-form .note span {
-    color: #e74c3c;
-    font-weight: 500;
+
+/* Input & Selectbox Styles (To và rõ) */
+.stTextInput input,
+.stSelectbox div[data-baseweb="select"]>div,
+.stDateInput input,
+.stNumberInput input {
+    border-radius: 8px !important;
+    border: 1px solid #e0e0e0 !important;
+    background-color: #fbfbfb !important;
+    height: 48px !important;
+    /* Cao hơn cho dễ nhập */
+    font-size: 15px !important;
+    color: #333 !important;
+}
+
+/* Khi focus vào ô nhập liệu */
+.stTextInput input:focus,
+.stSelectbox div[data-baseweb="select"]>div:focus-within,
+.stDateInput input:focus,
+.stNumberInput input:focus {
+    border-color: #0a2540 !important;
+    background-color: #fff !important;
+    box-shadow: 0 0 0 1px #0a2540 !important;
+}
+
+/* Label */
+.stTextInput label,
+.stSelectbox label,
+.stDateInput label,
+.stNumberInput label {
+    font-weight: 600 !important;
+    color: #444 !important;
+    font-size: 14px !important;
+    margin-bottom: 5px !important;
+}
+
+/* Nút SAVE */
+.stButton>button {
+    background: linear-gradient(135deg, #0a2540 0%, #1a3b5e 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 12px 0 !important;
+    font-size: 16px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    box-shadow: 0 4px 10px rgba(10, 37, 64, 0.2) !important;
+    transition: all 0.2s ease !important;
+}
+
+.stButton>button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 15px rgba(10, 37, 64, 0.3) !important;
+}
+
+/* Thêm vào cả add_class.css và join_class.css */
+.stButton>button[kind="secondary"],
+.stButton>button[data-testid="baseButton-secondary"] {
+    background: #fff !important;
+    color: #222 !important;
+    border: 1px solid #ddd !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    padding: 10px 18px !important;
+}
+
+.stButton>button[kind="secondary"]:hover,
+.stButton>button[data-testid="baseButton-secondary"]:hover {
+    background: #f5f5f5 !important;
+    border-color: #aaa !important;
 }

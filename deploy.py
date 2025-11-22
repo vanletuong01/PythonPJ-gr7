@@ -184,3 +184,6 @@ def main():
         if frontend_process:
             frontend_process.terminate()
         print("✅ All services stopped")
+
+if __name__ == "__main__":
+    main()
