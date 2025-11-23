@@ -80,14 +80,22 @@ def create_class(data: dict):
             text = str(e)
         return MockResp()
     
-def get_classes_by_teacher(id_login):
+def get_classes_by_teacher(teacher_id):
+    """Lấy danh sách lớp học của giáo viên"""
+    url = f"{API_BASE}/class/by_teacher/{teacher_id}"
     try:
-        resp = requests.get(f"{API_BASE}/class/by_teacher/{id_login}")
-        if resp.status_code == 200:
-            return resp.json()
+        resp = requests.get(url, timeout=TIMEOUT)
+        resp.raise_for_status()
+        data = resp.json()
+        
+        # In ra để debug (xóa sau khi test xong)
+        print("🔍 [DEBUG] Classes from API:", data)
+        
+        return data
+    except Exception as e:
+        print(f"[API ERROR] get_classes_by_teacher: {e}")
         return []
-    except Exception:
-        return []
+
     
 # --- SỬA HÀM NÀY ĐỂ LOGGING LỖI ---
 def get_students_in_class(class_id):
@@ -201,3 +209,42 @@ def get_attendance_session_detail(class_id: int, session_number: int):
     except Exception as e:
         print(f"❌ [API ERROR] get_attendance_session_detail: {e}")
         return []
+def get_session_detail(class_id, session_date):
+    """
+    Lấy chi tiết buổi học (danh sách SV đã/chưa điểm danh)
+    session_date: format "YYYY-MM-DD" (VD: "2025-11-17")
+    """
+    url = f"{API_BASE}/attendance/session-detail/{class_id}/{session_date}"
+    try:
+        resp = requests.get(url, timeout=TIMEOUT)
+        resp.raise_for_status()
+        return resp.json()
+    except Exception as e:
+        print(f"❌ [API ERROR] get_session_detail: {e}")
+        return {"success": False, "message": str(e)}
+
+def manual_checkin(study_id: int, session_date: str):
+    """
+    Điểm danh thủ công
+    
+    Args:
+        study_id: ID trong bảng study
+        session_date: Ngày điểm danh (YYYY-MM-DD)
+    """
+    try:
+        response = requests.post(
+            f"{API_BASE}/attendance/manual-checkin",
+            params={
+                "study_id": study_id,
+                "session_date": session_date
+            },
+            timeout=10
+        )
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.HTTPError as e:
+        print(f"[API ERROR] manual_checkin: {e}")
+        return {"success": False, "message": str(e)}
+    except Exception as e:
+        print(f"[API ERROR] manual_checkin: {e}")
+        return {"success": False, "message": str(e)}

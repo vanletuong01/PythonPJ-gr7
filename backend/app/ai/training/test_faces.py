@@ -8,9 +8,6 @@ from facenet_pytorch import MTCNN
 from backend.app.ai.face.fake_detector import FakeDetector
 from face_app.smart_face_attendance import detect_border_smart  # tái sử dụng hàm viền
 
-# ===============================
-# ⚙️ CẤU HÌNH
-# ===============================
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 mtcnn = MTCNN(keep_all=True, device=device)
 print(f"✅ Manual MTCNN khởi tạo trên {device}")
