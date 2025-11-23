@@ -120,13 +120,10 @@ with col_charts:
     df_chart = pd.DataFrame(chart_data)
 
     # 3. Cấu hình trục Y (Chiều cao cột)
-    # Max là tổng sinh viên của lớp (hoặc 60 nếu chưa có SV để biểu đồ không bị bẹt)
     y_max = total_students if total_students > 0 else 60
-    # Thêm chút khoảng trống phía trên (tăng 10%) để số trên đầu cột không bị cắt
     y_domain = [0, y_max * 1.1] 
 
     # 4. Vẽ biểu đồ với Altair
-    # Base chart
     base = alt.Chart(df_chart).encode(
         x=alt.X('Label', 
                 sort=alt.EncodingSortField(field="Order", order="ascending"),
@@ -146,14 +143,13 @@ with col_charts:
         tooltip=['Label', 'Value']
     )
 
-    # Vẽ Số lượng trên đầu cột (Text) - Giống số 55 trong Figma
-    # Sửa: Tạo cột 'TextValue' chỉ hiện số nếu > 0
+    # Vẽ Số lượng trên đầu cột (Text)
     df_chart["TextValue"] = df_chart["Value"].apply(lambda v: str(v) if v > 0 else "")
 
     text = base.mark_text(
         align='center',
         baseline='bottom',
-        dy=-5,  # Đẩy chữ lên trên cột 5px
+        dy=-5,
         color="#3b82f6",
         fontWeight="bold"
     ).encode(
@@ -169,10 +165,11 @@ with col_charts:
         st.caption("ℹ️ Hiện tại chưa có dữ liệu điểm danh.")
 
 # ==================================================================
-# CỘT PHẢI: DANH SÁCH SINH VIÊN (Giữ nguyên như cũ)
+# CỘT PHẢI: DANH SÁCH SINH VIÊN
 # ==================================================================
 with col_list:
     if students:
+        # 1. Logic sắp xếp
         def sort_key(s):
             name = s.get("StudentName") or s.get("FullName") or ""
             return name.split()[-1] if name else ""
@@ -181,13 +178,14 @@ with col_list:
         except:
             sorted_students = students
 
+        # 2. Tạo dữ liệu hiển thị
         table_data = []
         for i, s in enumerate(sorted_students, 1):
             name = s.get("StudentName") or s.get("FullName") or "---"
             code = s.get("StudentCode") or s.get("student_code") or "---"
             table_data.append({"STT": i, "HỌ TÊN": name, "MSSV": code})
 
-        # HTML Card Header
+        # 3. Header
         st.markdown(f"""
         <div class="student-list-card">
             <div class="list-header">
@@ -197,9 +195,27 @@ with col_list:
         </div>
         """, unsafe_allow_html=True)
         
-        # Render Table
+        # 4. Render danh sách và xử lý Click
         df_students = pd.DataFrame(table_data)
-        st.table(df_students.set_index("STT"))
+        for idx, row in df_students.iterrows():
+            st.markdown(
+                f"<div style='display:flex;align-items:center;gap:10px;padding:4px 0;'>"
+                f"<span style='width:32px;display:inline-block;'>{row['STT']}</span>"
+                f"</div>",
+                unsafe_allow_html=True
+            )
+            btn_label = f"{row['HỌ TÊN']} ({row['MSSV']})"
+            
+            # Nút bấm để xem chi tiết
+            if st.button(btn_label, key=f"btn_view_{row['MSSV']}", use_container_width=True):
+                # --- SỬA LỖI LOGIC CŨ Ở ĐÂY ---
+                # Lấy đúng sinh viên từ danh sách ĐÃ SẮP XẾP (sorted_students)
+                selected_student = sorted_students[idx] 
+                
+                # Lưu vào session
+                st.session_state["selected_student_id"] = selected_student.get("StudentID") or selected_student.get("id")
+                st.switch_page("pages/student_detail.py")
+            # -------------------------------
     else:
         st.markdown('<div class="student-list-card"><div class="empty-state">Danh sách trống</div></div>', unsafe_allow_html=True)
 

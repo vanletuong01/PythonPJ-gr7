@@ -125,6 +125,51 @@ def attendance_by_date(class_id: int, db: Session = Depends(get_db)):
     return [{"date": r[0], "present": r[1]} for r in result]
 
 
+
+
+# ------------------ ATTENDANCE SESSION DETAIL ------------------
+@router.get("/attendance/session/{class_id}/{date}")
+def attendance_session_detail(class_id: int, date: str, db: Session = Depends(get_db)):
+    """
+    Lấy danh sách sinh viên điểm danh theo từng buổi (ngày)
+    """
+
+    # Lấy toàn bộ sinh viên trong lớp
+    students = (
+        db.query(Student.StudentID, Student.FullName, Student.StudentCode)
+        .join(Study, Study.StudentID == Student.StudentID)
+        .filter(Study.ClassID == class_id)
+        .all()
+    )
+
+    # Lấy danh sách studyID đã điểm danh ngày đó
+    attended = (
+        db.query(Study.StudentID)
+        .join(Attendance, Attendance.StudyID == Study.StudyID)
+        .filter(Study.ClassID == class_id, Attendance.Date == date)
+        .all()
+    )
+
+    attended_ids = {a[0] for a in attended}
+
+    result = []
+    for s in students:
+        result.append({
+            "StudentID": s.StudentID,
+            "FullName": s.FullName,
+            "StudentCode": s.StudentCode,
+            "present": s.StudentID in attended_ids
+        })
+
+    return {
+        "date": date,
+        "class_id": class_id,
+        "total": len(students),
+        "present": len(attended_ids),
+        "data": result
+    }
+
+
 # ============================================================
 #     ⭐⭐⭐ API GÁN SINH VIÊN VÀO LỚP (QUAN TRỌNG NHẤT) ⭐⭐⭐
 # ============================================================

@@ -189,3 +189,15 @@ def get_student_detail(student_id):
     except:
         pass
     return None
+
+
+def get_attendance_session_detail(class_id: int, session_number: int):
+    try:
+        url = f"{API_BASE}/class/attendance/session/{class_id}/{session_number}"
+        resp = requests.get(url, timeout=TIMEOUT)
+        if resp.status_code == 200:
+            return resp.json()
+        return []
+    except Exception as e:
+        print(f"❌ [API ERROR] get_attendance_session_detail: {e}")
+        return []

@@ -105,7 +105,7 @@ def render_dashboard_sidebar():
             st.switch_page("pages/add_student.py")
         
         if st.button("✅ Điểm danh", use_container_width=True):
-            st.switch_page("pages/attendance.py")
+            st.switch_page("pages/class_detail.py")
         
         # --- LOGOUT ---
         if st.button("🚪 Đăng xuất", use_container_width=True):

@@ -30,7 +30,7 @@ class_info = st.session_state.get("selected_class_info", {})
 if not student_id:
     st.warning("Vui lòng chọn sinh viên từ Dashboard.")
     if st.button("Về Dashboard"):
-        st.switch_page("dashboard.py")
+        st.switch_page("pages/dashboard.py")
     st.stop()
 
 # 1. Gọi API lấy chi tiết sinh viên
@@ -52,15 +52,22 @@ render_header(
     class_id=class_info.get("ClassID", "")
 )
 
-# ===== GIAO DIỆN: NÚT BACK VỀ DASHBOARD =====
-c_back, c_rest = st.columns([1, 6])
-with c_back:
-    if st.button("⬅️ Quay lại Dashboard", use_container_width=True):
+# [ĐÃ XÓA] Phần nút Quay lại Dashboard lớn tại đây
+
+# ===== TIÊU ĐỀ: NÚT BACK + TIÊU ĐỀ (cùng 1 hàng) =====
+col_back, col_title = st.columns([0.05, 0.95])
+with col_back:
+    if st.button("←", use_container_width=True):
         st.switch_page("pages/dashboard.py")
+with col_title:
+    st.markdown(
+        "<div class='student-detail-title' style='margin-bottom:0;'>Hồ sơ sinh viên</div>",
+        unsafe_allow_html=True
+    )
 
 # ===== FORM THÔNG TIN =====
-st.markdown("<div class='student-detail-container'>", unsafe_allow_html=True)
-st.markdown("<div class='student-detail-title'>Hồ sơ sinh viên</div>", unsafe_allow_html=True)
+# [ĐÃ XÓA] Dòng div student-detail-container gây ra khoảng trắng thừa
+# st.markdown("<div class='student-detail-container'>", unsafe_allow_html=True)
 
 st.markdown("<div class='student-detail-form'>", unsafe_allow_html=True)
 c1, c2 = st.columns(2)
@@ -144,4 +151,5 @@ else:
     st.info(f"Chưa có dữ liệu điểm danh cho lớp {class_info.get('ClassName', 'này')}.")
 
 st.markdown("</div>", unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
+# [ĐÃ XÓA] div đóng của container
+# st.markdown("</div>", unsafe_allow_html=True)
