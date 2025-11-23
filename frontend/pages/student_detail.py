@@ -11,7 +11,7 @@ st.set_page_config(
 
 # ===== IMPORT SERVICES =====
 sys.path.append(str(Path(__file__).parent.parent))
-from services.api_client import get_student_detail, get_student_attendance
+from services.api_client import get_student_detail, get_student_attendance ,remove_student_from_class
 from components.header import render_header
 from components.sidebar_dashboard import render_dashboard_sidebar
 
@@ -89,7 +89,16 @@ b1, b2 = st.columns(2)
 with b1:
     st.button("LƯU THÔNG TIN (SAVE)", type="primary", use_container_width=True)
 with b2:
-    st.button("XÓA SINH VIÊN (DELETE)", type="secondary", use_container_width=True)
+    if st.button("XÓA SINH VIÊN (DELETE)", type="secondary", use_container_width=True):
+        if class_info.get("ClassID"):
+            ok = remove_student_from_class(class_info["ClassID"], student_id)
+            if ok:
+                st.success("Đã xóa sinh viên khỏi lớp.")
+                st.switch_page("pages/class_detail.py")
+            else:
+                st.error("Không thể xóa sinh viên khỏi lớp.")
+        else:
+            st.warning("Không xác định được lớp để xóa.")
 
 st.divider()
 

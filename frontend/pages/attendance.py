@@ -4,501 +4,309 @@ from datetime import datetime
 import sys
 import cv2
 import av
-import time
 import threading
 import pymysql
 import os
-import base64
+import queue
 
-# ===== CẤU HÌNH =====
-st.set_page_config(page_title="Điểm danh", layout="wide", initial_sidebar_state="collapsed")
+# --- LOAD BIẾN MÔI TRƯỜNG ---
+from dotenv import load_dotenv
+load_dotenv()
+# ----------------------------
+
+# ===== CẤU HÌNH TRANG =====
+st.set_page_config(page_title="Điểm danh Camera", layout="wide", initial_sidebar_state="collapsed")
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from backend.app.ai.smart_face_attendance import match_image_and_check_real
+# Import AI
+try:
+    from backend.app.ai.smart_face_attendance import match_image_and_check_real
+except ImportError:
+    def match_image_and_check_real(img): return None
+    st.error("⚠️ Không tìm thấy module AI.")
 
-# ===== CSS =====
+# ===== CSS STYLING =====
 st.markdown("""
     <style>
-        .att-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
-            border-radius: 10px;
-            color: white;
-            margin-bottom: 20px;
-        }
-        .att-card {
-            background: #f0fdf4;
-            border-left: 5px solid #22c55e;
-            padding: 12px;
-            margin-bottom: 8px;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .absent-card {
-            background: #fef2f2;
-            border-left: 5px solid #ef4444;
-            padding: 12px;
-            margin-bottom: 8px;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .clock {
-            font-size: 24px;
-            font-weight: bold;
-            color: #fbbf24;
-        }
-        .metric-box {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        .metric-value {
-            font-size: 32px;
-            font-weight: bold;
-            color: #1e40af;
-        }
-        .metric-label {
-            font-size: 14px;
-            color: #64748b;
-            margin-top: 5px;
-        }
+        .att-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px; color: white; margin-bottom: 20px; }
+        .att-card { background: #f0fdf4; border-left: 5px solid #22c55e; padding: 12px; margin-bottom: 8px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .absent-card { background: #fef2f2; border-left: 5px solid #ef4444; padding: 12px; margin-bottom: 8px; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .metric-box { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; }
+        .metric-value { font-size: 32px; font-weight: bold; color: #1e40af; }
+        .metric-label { font-size: 14px; color: #64748b; margin-top: 5px; }
+        div[data-testid="stToast"] { padding: 10px; background-color: #d4edda; color: #155724; border-radius: 5px; border: 1px solid #c3e6cb; }
     </style>
 """, unsafe_allow_html=True)
 
-# ===== KIỂM TRA SESSION =====
+# ===== QUEUE TOÀN CỤC =====
+@st.cache_resource
+def get_result_queue():
+    return queue.Queue()
+
+result_queue = get_result_queue()
+
+# Session State
+if "att_students" not in st.session_state: st.session_state.att_students = []
+if "all_students_cache" not in st.session_state: st.session_state.all_students_cache = []
+if "att_loaded" not in st.session_state: st.session_state.att_loaded = False
+
+# ===== LẤY THÔNG TIN SESSION =====
 selected_session = st.session_state.get("selected_session")
-if not selected_session:
-    st.warning("⚠️ Vui lòng chọn buổi học trước!")
-    if st.button("← Quay lại"):
-        st.switch_page("pages/select_session.py")
+class_info = st.session_state.get("selected_class_info", {})
+
+if not selected_session or not class_info:
+    st.warning("⚠️ Vui lòng chọn lớp và buổi học trước!")
+    if st.button("← Quay lại"): st.switch_page("pages/class_detail.py")
     st.stop()
 
-class_info = st.session_state.get("selected_class_info", {})
 selected_class_id = class_info.get("ClassID")
 
-if not selected_class_id:
-    st.error("Lỗi: Không tìm thấy ClassID")
-    st.stop()
+# Xử lý ngày (YYYY-MM-DD)
+try:
+    raw_date = selected_session.get("value") or selected_session.get("date_raw") or selected_session.get("date")
+    if isinstance(raw_date, str) and "/" in raw_date:
+         SESSION_DATE_STR = datetime.strptime(raw_date, "%d/%m/%Y").strftime("%Y-%m-%d")
+    else:
+         SESSION_DATE_STR = str(raw_date)
+except:
+    SESSION_DATE_STR = datetime.now().strftime("%Y-%m-%d")
 
-# ===== HÀM LOAD DANH SÁCH ĐÃ ĐIỂM DANH TỪ DB =====
-def load_attendance_from_db(class_id, session_date):
-    """Load danh sách sinh viên đã điểm danh trong buổi học này"""
+# ===== HÀM DB (PORT 3306) =====
+def get_db_connection():
+    return pymysql.connect(
+        host=os.getenv("DB_HOST", "localhost"),
+        user=os.getenv("DB_USER", "root"),
+        password=os.getenv("DB_PASSWORD", ""),
+        database=os.getenv("DB_NAME", "python_project"),
+        port=3306, # Cố định cổng 3306
+        charset="utf8mb4",
+        cursorclass=pymysql.cursors.DictCursor
+    )
+
+def load_attendance_data():
     try:
-        conn = pymysql.connect(
-            host=os.getenv("DB_HOST", "localhost"),
-            user=os.getenv("DB_USER", "root"),
-            password=os.getenv("DB_PASSWORD", ""),
-            database=os.getenv("DB_NAME", "python_project"),
-            charset="utf8mb4"
-        )
-        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        conn = get_db_connection()
+        cursor = conn.cursor()
         
+        # Lấy danh sách đã điểm danh
         cursor.execute("""
-            SELECT 
-                s.StudentID,
-                st.FullName,
-                st.StudentCode,
-                c.ClassName,
-                a.Time,
-                a.AttendanceID
+            SELECT s.StudentID, st.FullName, st.StudentCode, c.ClassName, a.Time
             FROM attendance a
             JOIN study s ON a.StudyID = s.StudyID
             JOIN student st ON s.StudentID = st.StudentID
             JOIN class c ON s.ClassID = c.ClassID
             WHERE s.ClassID = %s AND a.Date = %s
             ORDER BY a.Time DESC
-        """, (class_id, session_date))
+        """, (selected_class_id, SESSION_DATE_STR))
+        attended = list(cursor.fetchall())
         
-        rows = cursor.fetchall()
-        conn.close()
-        
-        result = []
-        for row in rows:
-            result.append({
-                "StudentID": row["StudentID"],
-                "FullName": row["FullName"],
-                "StudentCode": row["StudentCode"],
-                "ClassName": row["ClassName"],
-                "Time": row["Time"].strftime("%H:%M:%S") if row["Time"] else "Thủ công",
-                "AttendanceID": row["AttendanceID"]
-            })
-        
-        return result
-        
-    except Exception as e:
-        print(f"❌ Error load_attendance_from_db: {e}")
-        return []
-
-# ===== HÀM LẤY DANH SÁCH TẤT CẢ SINH VIÊN =====
-def get_all_students_in_class(class_id):
-    """Lấy tất cả sinh viên trong lớp"""
-    try:
-        conn = pymysql.connect(
-            host=os.getenv("DB_HOST", "localhost"),
-            user=os.getenv("DB_USER", "root"),
-            password=os.getenv("DB_PASSWORD", ""),
-            database=os.getenv("DB_NAME", "python_project"),
-            charset="utf8mb4"
-        )
-        cursor = conn.cursor(pymysql.cursors.DictCursor)
-        
+        # Lấy danh sách tất cả sinh viên
         cursor.execute("""
-            SELECT 
-                s.StudyID,
-                st.StudentID,
-                st.FullName,
-                st.StudentCode,
-                c.ClassName
+            SELECT s.StudyID, st.StudentID, st.FullName, st.StudentCode, c.ClassName
             FROM study s
             JOIN student st ON s.StudentID = st.StudentID
             JOIN class c ON s.ClassID = c.ClassID
             WHERE s.ClassID = %s
-            ORDER BY st.StudentCode
-        """, (class_id,))
+        """, (selected_class_id,))
+        all_students = list(cursor.fetchall())
         
-        rows = cursor.fetchall()
         conn.close()
-        return rows
         
+        for row in attended:
+            row["Time"] = str(row["Time"]) if row["Time"] else "Thủ công"
+            
+        return attended, all_students
     except Exception as e:
-        print(f"❌ Error get_all_students_in_class: {e}")
-        return []
+        st.error(f"❌ DB Connection Error: {e}")
+        return [], []
 
-# ===== KHỞI TẠO STATE =====
-if "att_students" not in st.session_state:
-    st.session_state.att_students = []
-if "checkin_log" not in st.session_state:
-    st.session_state.checkin_log = {}
-if "att_loaded" not in st.session_state:
-    st.session_state.att_loaded = False
-if "temp_attendance" not in st.session_state:
-    st.session_state.temp_attendance = {"students": []}
-if "temp_checkin_log" not in st.session_state:
-    st.session_state.temp_checkin_log = {}
-
-# ⭐ LOAD DỮ LIỆU TỪ DB LẦN ĐẦU
 if not st.session_state.att_loaded:
-    session_date_raw = selected_session.get("date_raw") or selected_session.get("date")
-    
-    if isinstance(session_date_raw, str):
-        try:
-            session_date_raw = datetime.strptime(session_date_raw, "%d/%m/%Y").strftime("%Y-%m-%d")
-        except:
-            pass
-    
-    loaded_students = load_attendance_from_db(selected_class_id, session_date_raw)
-    st.session_state.att_students = loaded_students
+    att, all_s = load_attendance_data()
+    st.session_state.att_students = att
+    st.session_state.all_students_cache = all_s
     st.session_state.att_loaded = True
-    
-    print(f"✅ Loaded {len(loaded_students)} students from DB")
 
-# ===== HEADER =====
-h_col1, h_col2 = st.columns([0.5, 9.5])
+# ===== CALLBACK VIDEO (LOG CHI TIẾT) =====
+def create_video_callback(class_id, date_str, queue_ref):
+    def video_callback(frame):
+        img = frame.to_ndarray(format="bgr24")
+        
+        try:
+            result = match_image_and_check_real(img)
+            
+            # [DEBUG] Chỉ in khi tìm thấy mặt
+            if result and result.get("faces") and len(result["faces"]) > 0:
+                print(f"🤖 [AI] Found: {len(result['faces'])} faces")
+            
+            if result and result.get("faces"):
+                for face in result["faces"]:
+                    if face.get("found") and face.get("student"):
+                        student = face["student"]
+                        student_id = student.get("id")
+                        name = student.get("name", "Unknown")
+                        similarity = face.get("similarity", 0)
+                        box = face.get("box")
+                        
+                        msg = "Error"
+                        try:
+                            # --- KẾT NỐI DB RIÊNG CHO LUỒNG NÀY ---
+                            conn = pymysql.connect(
+                                host=os.getenv("DB_HOST", "localhost"),
+                                user=os.getenv("DB_USER", "root"),
+                                password=os.getenv("DB_PASSWORD", ""),
+                                database=os.getenv("DB_NAME", "python_project"),
+                                port=3306,
+                                charset="utf8mb4"
+                            )
+                            cursor = conn.cursor()
+                            
+                            # 1. Tìm StudyID
+                            cursor.execute("SELECT StudyID FROM study WHERE StudentID = %s AND ClassID = %s", (student_id, class_id))
+                            study_row = cursor.fetchone()
+                            
+                            if study_row:
+                                study_id = study_row[0]
+                                # 2. Kiểm tra trùng
+                                cursor.execute("SELECT AttendanceID FROM attendance WHERE StudyID = %s AND Date = %s", (study_id, date_str))
+                                if cursor.fetchone():
+                                    msg = "Duplicate"
+                                else:
+                                    # 3. INSERT VÀO DB
+                                    print(f"📝 [INSERT] {name} - Sim: {similarity}")
+                                    cursor.execute("""
+                                        INSERT INTO attendance (StudyID, Date, Time, PhotoPath)
+                                        VALUES (%s, %s, CURTIME(), %s)
+                                    """, (study_id, date_str, f"sim:{similarity:.2f}"))
+                                    conn.commit() # QUAN TRỌNG
+                                    msg = "Success"
+                                    print(f"✅ [SAVED] Saved {name} to DB!")
+                            else:
+                                print(f"❌ [LOGIC] SV ID {student_id} không thuộc Lớp {class_id}")
+                                msg = "NotInClass"
+                                
+                            conn.close()
+                        except Exception as db_err:
+                            print(f"🔥 [DB ERROR] {db_err}")
 
-with h_col1:
-    if st.button("←", key="btn_back_att"):
+                        # Gửi ra UI
+                        if msg == "Success":
+                            queue_ref.put({
+                                "StudentID": student_id,
+                                "FullName": name,
+                                "StudentCode": student.get("mssv", "Unknown"),
+                                "Time": datetime.now().strftime("%H:%M:%S")
+                            })
+
+                        # Vẽ khung
+                        if box:
+                            x1, y1, x2, y2 = map(int, box)
+                            if msg == "Success": color = (0, 255, 0)
+                            elif msg == "Duplicate": color = (0, 165, 255)
+                            elif msg == "NotInClass": color = (0, 0, 255)
+                            else: color = (128, 128, 128)
+                            
+                            cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
+                            cv2.putText(img, name, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
+
+        except Exception as e:
+            print(f"AI Error: {e}")
+            
+        return av.VideoFrame.from_ndarray(img, format="bgr24")
+    return video_callback
+
+# ===== GIAO DIỆN =====
+col_back, col_info = st.columns([0.5, 9.5])
+with col_back:
+    if st.button("←", help="Quay lại"):
         st.session_state.att_loaded = False
-        st.session_state["data_refresh_needed"] = True
         st.switch_page("pages/select_session.py")
 
-with h_col2:
-    current_time = datetime.now().strftime("%H:%M:%S")
+with col_info:
     st.markdown(f"""
     <div class="att-header">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-                <h2 style="margin:0;">📌 Buổi {selected_session['session_number']} - {selected_session['date']}</h2>
-                <p style="margin:5px 0 0 0; opacity:0.9;">
-                    {class_info.get('ClassName')} | {class_info.get('FullClassName')}
-                </p>
-            </div>
-            <div class="clock">🕐 {current_time}</div>
-        </div>
+        <h3 style="margin:0;">📸 ĐIỂM DANH: {selected_session.get('label', f"Ngày {SESSION_DATE_STR}")}</h3>
+        <p style="margin:0;">Lớp: {class_info.get('ClassName')} - {class_info.get('FullClassName')}</p>
     </div>
     """, unsafe_allow_html=True)
 
-# ===== THỐNG KÊ TỔNG QUAN =====
-all_students = get_all_students_in_class(selected_class_id)
-total_students = len(all_students)
-attended_count = len(st.session_state.att_students)
-absent_count = total_students - attended_count
+# Thống kê
+total_sv = len(st.session_state.all_students_cache)
+attended_sv = len(st.session_state.att_students)
+absent_sv = total_sv - attended_sv
 
-col_metric1, col_metric2, col_metric3 = st.columns(3)
+m1, m2, m3 = st.columns(3)
+m1.markdown(f'<div class="metric-box"><div class="metric-value">{total_sv}</div><div class="metric-label">Tổng sĩ số</div></div>', unsafe_allow_html=True)
+m2.markdown(f'<div class="metric-box"><div class="metric-value" style="color:#22c55e">{attended_sv}</div><div class="metric-label">Đã điểm danh</div></div>', unsafe_allow_html=True)
+m3.markdown(f'<div class="metric-box"><div class="metric-value" style="color:#ef4444">{absent_sv}</div><div class="metric-label">Vắng</div></div>', unsafe_allow_html=True)
 
-with col_metric1:
-    st.markdown(f"""
-    <div class="metric-box">
-        <div class="metric-value">👥 {total_students}</div>
-        <div class="metric-label">Tổng sinh viên</div>
-    </div>
-    """, unsafe_allow_html=True)
+st.markdown("<br>", unsafe_allow_html=True)
 
-with col_metric2:
-    st.markdown(f"""
-    <div class="metric-box" style="border-left: 4px solid #22c55e;">
-        <div class="metric-value" style="color: #22c55e;">✅ {attended_count}</div>
-        <div class="metric-label">Đã điểm danh</div>
-    </div>
-    """, unsafe_allow_html=True)
+# CAMERA & DANH SÁCH
+from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 
-with col_metric3:
-    st.markdown(f"""
-    <div class="metric-box" style="border-left: 4px solid #ef4444;">
-        <div class="metric-value" style="color: #ef4444;">❌ {absent_count}</div>
-        <div class="metric-label">Vắng</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
-
-lock = threading.Lock()
-
-# ===== HÀM LƯU DB =====
-def quick_save_attendance(student_id, class_id, similarity, photo_base64=None):
-    try:
-        print(f"DEBUG: student_id={student_id}, class_id={class_id}, similarity={similarity}")
-        conn = pymysql.connect(
-            host=os.getenv("DB_HOST", "localhost"),
-            user=os.getenv("DB_USER", "root"),
-            password=os.getenv("DB_PASSWORD", ""),
-            database=os.getenv("DB_NAME", "python_project"),
-            charset="utf8mb4"
-        )
-        cursor = conn.cursor()
-        
-        cursor.execute(
-            "SELECT StudyID FROM study WHERE StudentID = %s AND ClassID = %s",
-            (student_id, class_id)
-        )
-        row = cursor.fetchone()
-        print("DEBUG: StudyID row:", row)
-        
-        if not row:
-            conn.close()
-            return "NoStudyID"
-        
-        study_id = row[0]
-        
-        cursor.execute(
-            "SELECT AttendanceID FROM attendance WHERE StudyID = %s AND Date = CURDATE()",
-            (study_id,)
-        )
-        if cursor.fetchone():
-            conn.close()
-            return "Duplicate"
-        
-        photo_data = photo_base64 if photo_base64 else f"similarity_{similarity:.2f}"
-        
-        cursor.execute(
-            """
-            INSERT INTO attendance (StudyID, Date, Time, PhotoPath)
-            VALUES (%s, CURDATE(), CURTIME(), %s)
-            """,
-            (study_id, photo_data)
-        )
-        
-        conn.commit()
-        conn.close()
-        return "Success"
-        
-    except Exception as e:
-        print(f"❌ DB Error: {e}")
-        return "Error"
-
-# ===== CALLBACK VIDEO =====
-def video_frame_callback(frame):
-    img = frame.to_ndarray(format="bgr24")
-    if "temp_checkin_log" not in st.session_state:
-        st.session_state.temp_checkin_log = {}
-
-    try:
-        result = match_image_and_check_real(img)
-        print("DEBUG result:", result)
-        if (
-            result
-            and result.get("faces")
-            and len(result["faces"]) > 0
-            and result["faces"][0].get("found")
-            and result["faces"][0].get("student")
-        ):
-            face = result["faces"][0]
-            student = face["student"]
-            student_id = student["id"]
-            name = student["name"]
-            similarity = face.get("similarity", 0)
-            box = face.get("box")  # [x1, y1, x2, y2]
-            # Ghi attendance cho student_id này
-            status_db = quick_save_attendance(
-                student_id=student_id,
-                class_id=selected_class_id,
-                similarity=similarity
-            )
-            print("DEBUG status_db:", status_db)
-            # Vẽ khung và tên lên khuôn mặt
-            import cv2
-            if box:
-                x1, y1, x2, y2 = map(int, box)
-                # Vẽ hình chữ nhật quanh mặt
-                cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                # Vẽ tên phía trên khung mặt
-                cv2.putText(
-                    img,
-                    f"{name}",
-                    (x1, y1 - 10 if y1 - 10 > 0 else y1 + 20),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    1.0,
-                    (0, 255, 0),
-                    2,
-                    cv2.LINE_AA
-                )
-            # ...phần cập nhật danh sách giữ nguyên...
-    except Exception as e:
-        print(f"❌ Callback Error: {e}")
-
-    return av.VideoFrame.from_ndarray(img, format="bgr24")
-
-# ===== GIAO DIỆN CHÍNH =====
-from streamlit_webrtc import webrtc_streamer, RTCConfiguration, WebRtcMode
-
-col_cam, col_list = st.columns([2.5, 1.5])
+col_cam, col_list = st.columns([1.5, 1])
 
 with col_cam:
-    st.markdown("### 📹 Camera điểm danh")
-    rtc_config = RTCConfiguration({
-        "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
-    })
+    st.info("Hướng mặt vào camera để điểm danh")
+    
+    callback_func = create_video_callback(selected_class_id, SESSION_DATE_STR, result_queue)
     
     webrtc_streamer(
-        key="attendance_camera",
+        key="attendance_cam",
         mode=WebRtcMode.SENDRECV,
-        rtc_configuration=rtc_config,
-        video_frame_callback=video_frame_callback,
+        rtc_configuration=RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}),
+        video_frame_callback=callback_func,
         media_stream_constraints={"video": True, "audio": False},
-        async_processing=True
+        async_processing=True,
     )
 
 with col_list:
-    # TAB QUẢN LÝ
-    tab1, tab2, tab3 = st.tabs(["✅ Đã điểm danh", "❌ Chưa điểm danh", "🖊️ Điểm danh thủ công"])
+    tab1, tab2 = st.tabs(["✅ Đã điểm danh", "❌ Chưa điểm danh"])
     
-    # TAB 1: ĐÃ ĐIỂM DANH
     with tab1:
-        if st.button("🔄 Cập nhật", width='stretch', type="primary"):
-            with lock:
-                existing_ids = {s.get("StudentID") for s in st.session_state.att_students}
-                for student in st.session_state.temp_attendance["students"]:
-                    if student.get("StudentID") not in existing_ids:
-                        st.session_state.att_students.insert(0, student)
-                        existing_ids.add(student.get("StudentID"))
+        # Đã sửa lỗi use_container_width
+        if st.button("🔄 Làm mới danh sách", key="refresh_btn"): 
+            st.session_state.att_loaded = False
             st.rerun()
-        
-        st.write(f"**Tổng: {len(st.session_state.att_students)} sinh viên**")
-        
-        for s in st.session_state.att_students:
-            st.markdown(f"""
-            <div class="att-card">
-                <div style="font-weight:bold; font-size:16px; color:#065f46;">
-                    {s['FullName']}
-                </div>
-                <div style="margin-top:4px; color:#374151;">
-                    📝 MSSV: {s['StudentCode']}<br>
-                    🏫 Lớp: {s['ClassName']}<br>
-                    ⏰ Thời gian: {s['Time']}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    # TAB 2: CHƯA ĐIỂM DANH
-    with tab2:
-        attended_ids = {s.get("StudentID") for s in st.session_state.att_students}
-        absent_students = [s for s in all_students if s["StudentID"] not in attended_ids]
-        
-        st.write(f"**Tổng: {len(absent_students)} sinh viên**")
-        
-        for s in absent_students:
-            st.markdown(f"""
-            <div class="absent-card">
-                <div style="font-weight:bold; font-size:16px; color:#991b1b;">
-                    {s['FullName']}
-                </div>
-                <div style="margin-top:4px; color:#374151;">
-                    📝 MSSV: {s['StudentCode']}<br>
-                    🏫 Lớp: {s['ClassName']}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-    
-    # TAB 3: ĐIỂM DANH THỦ CÔNG
-    with tab3:
-        attended_ids = {s.get("StudentID") for s in st.session_state.att_students}
-        absent_students = [s for s in all_students if s["StudentID"] not in attended_ids]
-        
-        if absent_students:
-            selected_student = st.selectbox(
-                "Chọn sinh viên:",
-                options=absent_students,
-                format_func=lambda x: f"{x['FullName']} - {x['StudentCode']}"
-            )
-            
-            if st.button("✅ Xác nhận điểm danh", width='stretch'):
-                try:
-                    conn = pymysql.connect(
-                        host=os.getenv("DB_HOST", "localhost"),
-                        user=os.getenv("DB_USER", "root"),
-                        password=os.getenv("DB_PASSWORD", ""),
-                        database=os.getenv("DB_NAME", "python_project"),
-                        charset="utf8mb4"
-                    )
-                    cursor = conn.cursor()
-                    
-                    session_date_raw = selected_session.get("date_raw") or selected_session.get("date")
-                    if isinstance(session_date_raw, str):
-                        try:
-                            session_date_raw = datetime.strptime(session_date_raw, "%d/%m/%Y").strftime("%Y-%m-%d")
-                        except:
-                            pass
-                    
-                    cursor.execute(
-                        """
-                        INSERT INTO attendance (StudyID, Date, Time, PhotoPath)
-                        VALUES (%s, %s, NULL, NULL)
-                        """,
-                        (selected_student["StudyID"], session_date_raw)
-                    )
-                    
-                    conn.commit()
-                    conn.close()
-                    
-                    st.session_state.att_students.insert(0, {
-                        "StudentID": selected_student["StudentID"],
-                        "FullName": selected_student["FullName"],
-                        "StudentCode": selected_student["StudentCode"],
-                        "ClassName": selected_student["ClassName"],
-                        "Time": "Thủ công"
-                    })
-                    
-                    st.success(f"✅ Đã điểm danh: {selected_student['FullName']}")
-                    st.rerun()
-                    
-                except Exception as e:
-                    st.error(f"❌ Lỗi: {e}")
-        else:
-            st.info("✅ Tất cả sinh viên đã điểm danh")
 
-# ⭐ AUTO-REFRESH
-import time as time_module
-time_module.sleep(2)
-with lock:
-    if len(st.session_state.temp_attendance["students"]) > 0:
-        existing_ids = {s.get("StudentID") for s in st.session_state.att_students}
-        for student in st.session_state.temp_attendance["students"]:
-            if student.get("StudentID") not in existing_ids:
-                st.session_state.att_students.insert(0, student)
-                existing_ids.add(student.get("StudentID"))
-        st.session_state.temp_attendance["students"] = []
+        if not st.session_state.att_students:
+            st.info("Chưa có ai điểm danh.")
+        else:
+            for s in st.session_state.att_students:
+                st.markdown(f"""
+                <div class="att-card">
+                    <b>{s.get('FullName', 'Unknown')}</b><br>
+                    <small>MSSV: {s.get('StudentCode')} | ⏰ {s.get('Time')}</small>
+                </div>
+                """, unsafe_allow_html=True)
+                
+    with tab2:
+        attended_ids = [s['StudentID'] for s in st.session_state.att_students]
+        absent_list = [s for s in st.session_state.all_students_cache if s['StudentID'] not in attended_ids]
+        
+        if not absent_list:
+            st.success("Lớp đã đi học đủ!")
+        else:
+            for s in absent_list:
+                st.markdown(f"""
+                <div class="absent-card">
+                    <b>{s['FullName']}</b><br>
+                    <small>MSSV: {s['StudentCode']}</small>
+                </div>
+                """, unsafe_allow_html=True)
+
+if not result_queue.empty():
+    new_data_found = False
+    while not result_queue.empty():
+        new_student = result_queue.get()
+        is_exist = any(s['StudentID'] == new_student['StudentID'] for s in st.session_state.att_students)
+        if not is_exist:
+            st.session_state.att_students.insert(0, new_student)
+            new_data_found = True
+            st.toast(f"✅ Đã điểm danh: {new_student['FullName']}")
+    
+    if new_data_found:
         st.rerun()

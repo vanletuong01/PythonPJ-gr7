@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
 
+
 from backend.app.database import get_db
 from backend.app.schemas.class_schemas import ClassCreate, ClassOut
 from backend.app.crud.class_crud import create_class, get_all_classes
@@ -212,3 +213,34 @@ def assign_student_to_class(payload: AssignStudentRequest, db: Session = Depends
     db.commit()
 
     return {"message": "Student assigned successfully", "class_id": payload.class_id}
+
+
+@router.post("/remove_student")
+def remove_student_from_class(data: dict, db: Session = Depends(get_db)):
+    class_id = data.get("ClassID")
+    student_id = data.get("StudentID")
+    study_row = db.query(Study).filter(Study.ClassID == class_id, Study.StudentID == student_id).first()
+    if not study_row:
+        return {"success": False, "msg": "Không tìm thấy sinh viên trong lớp"}
+    study_id = study_row.StudyID
+    db.query(Attendance).filter(Attendance.StudyID == study_id).delete()
+    db.query(Study).filter(Study.StudyID == study_id).delete()
+    db.commit()
+    return {"success": True}
+
+# ------------------ UPDATE CLASS ------------------
+@router.post("/update")
+def update_class(data: dict, db: Session = Depends(get_db)):
+    class_id = data.get("ClassID")
+    major_id = data.get("MajorID")
+    type_id = data.get("TypeID")
+    date_start = data.get("DateStart")
+    class_name = data.get("ClassName")
+    db.query(Class).filter(Class.ClassID == class_id).update({
+        Class.MajorID: major_id,
+        Class.TypeID: type_id,
+        Class.DateStart: date_start,
+        Class.ClassName: class_name
+    })
+    db.commit()
+    return {"success": True}

@@ -189,3 +189,44 @@ else:
 st.markdown('<div style="text-align: center; margin-top: 40px; color: #666; font-size: 14px;">Không tìm thấy lớp?</div>', unsafe_allow_html=True)
 if st.button("+ Tạo lớp mới", key="create_new_class", use_container_width=True):
     st.switch_page("pages/add_class.py")
+
+# ==========================================
+# 4. CẬP NHẬT THÔNG TIN LỚP (NEW SECTION)
+# ==========================================
+st.markdown("### ✏️ Cập nhật thông tin lớp học")
+    
+if class_info:
+    c1, c2, c3, c4 = st.columns([2, 2, 1.5, 2.5])
+    with c1:
+        major_id = st.selectbox(
+            "Chuyên ngành", 
+            options=list(major_dict.keys()), 
+            format_func=lambda x: major_dict.get(x, ""),
+            index=list(major_dict.keys()).index(class_info.get("MajorID", list(major_dict.keys())[0]))
+        )
+    with c2:
+        type_id = st.selectbox(
+            "Hệ / Loại", 
+            options=list(type_dict.keys()), 
+            format_func=lambda x: type_dict.get(x, ""),
+            index=list(type_dict.keys()).index(class_info.get("TypeID", list(type_dict.keys())[0]))
+        )
+    with c3:
+        year = st.text_input("Năm học", value=str(class_info.get("DateStart", ""))[:4], key="year_update")
+    with c4:
+        class_name = st.text_input("Tên lớp", value=class_info.get("ClassName", ""))
+
+    if st.button("Cập nhật thông tin lớp"):
+        # Gọi API cập nhật lớp ở đây, ví dụ:
+        from services.api_client import update_class
+        ok = update_class(
+            class_id=class_info["ClassID"],
+            major_id=major_id,
+            type_id=type_id,
+            year=year,
+            class_name=class_name
+        )
+        if ok:
+            st.success("Cập nhật thành công!")
+        else:
+            st.error("Cập nhật thất bại!")

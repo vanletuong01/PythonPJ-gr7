@@ -259,3 +259,28 @@ def get_all_classes():
     except Exception as e:
         print(f"❌ [API ERROR] get_all_classes: {e}")
         return []
+
+def remove_student_from_class(class_id, student_id):
+    url = f"{API_BASE}/class/remove_student"
+    try:
+        resp = requests.post(url, json={"ClassID": class_id, "StudentID": student_id}, timeout=TIMEOUT)
+        return resp.status_code == 200
+    except Exception as e:
+        print(f"❌ [API ERROR] remove_student_from_class: {e}")
+        return False
+
+def update_class(class_id, major_id, type_id, year, class_name):
+    url = f"{API_BASE}/class/update"
+    data = {
+        "ClassID": class_id,
+        "MajorID": major_id,
+        "TypeID": type_id,
+        "DateStart": f"{year}-01-01",
+        "ClassName": class_name
+    }
+    try:
+        resp = requests.post(url, json=data, timeout=TIMEOUT)
+        return resp.status_code == 200
+    except Exception as e:
+        print(f"❌ [API ERROR] update_class: {e}")
+        return False
