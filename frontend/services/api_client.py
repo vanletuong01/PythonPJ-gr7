@@ -199,9 +199,9 @@ def get_student_detail(student_id):
     return None
 
 
-def get_attendance_session_detail(class_id: int, session_number: int):
+def get_attendance_session_detail(class_id, date):
+    url = f"{API_BASE}/attendance/session/{class_id}/{date}"
     try:
-        url = f"{API_BASE}/class/attendance/session/{class_id}/{session_number}"
         resp = requests.get(url, timeout=TIMEOUT)
         if resp.status_code == 200:
             return resp.json()
@@ -248,3 +248,14 @@ def manual_checkin(study_id: int, session_date: str):
     except Exception as e:
         print(f"[API ERROR] manual_checkin: {e}")
         return {"success": False, "message": str(e)}
+
+def get_all_classes():
+    url = f"{API_BASE}/class/"
+    try:
+        resp = requests.get(url, timeout=TIMEOUT)
+        if resp.status_code == 200:
+            return resp.json()
+        return []
+    except Exception as e:
+        print(f"❌ [API ERROR] get_all_classes: {e}")
+        return []

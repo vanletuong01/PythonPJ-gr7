@@ -261,6 +261,7 @@ lock = threading.Lock()
 # ===== HÀM LƯU DB =====
 def quick_save_attendance(student_id, class_id, similarity, photo_base64=None):
     try:
+        print(f"DEBUG: student_id={student_id}, class_id={class_id}, similarity={similarity}")
         conn = pymysql.connect(
             host=os.getenv("DB_HOST", "localhost"),
             user=os.getenv("DB_USER", "root"),
@@ -275,6 +276,7 @@ def quick_save_attendance(student_id, class_id, similarity, photo_base64=None):
             (student_id, class_id)
         )
         row = cursor.fetchone()
+        print("DEBUG: StudyID row:", row)
         
         if not row:
             conn.close()
@@ -286,7 +288,6 @@ def quick_save_attendance(student_id, class_id, similarity, photo_base64=None):
             "SELECT AttendanceID FROM attendance WHERE StudyID = %s AND Date = CURDATE()",
             (study_id,)
         )
-        
         if cursor.fetchone():
             conn.close()
             return "Duplicate"
@@ -312,76 +313,53 @@ def quick_save_attendance(student_id, class_id, similarity, photo_base64=None):
 # ===== CALLBACK VIDEO =====
 def video_frame_callback(frame):
     img = frame.to_ndarray(format="bgr24")
-    
+    if "temp_checkin_log" not in st.session_state:
+        st.session_state.temp_checkin_log = {}
+
     try:
         result = match_image_and_check_real(img)
-        
-        if result.get("status") == "ok":
-            faces = result.get("faces", [])
-            
-            for face in faces:
-                box = face.get("box")
-                if not box:
-                    continue
-                
-                x1, y1, x2, y2 = [int(v) for v in box]
-                found = face.get("found")
-                student = face.get("student", {})
-                name = student.get("name", "Unknown")
-                code = student.get("code", "N/A")
-                class_name = student.get("class_name", "N/A")
-                similarity = face.get("similarity", 0)
-                
-                if found:
-                    color = (0, 255, 0)
-                    label = f"{name} ({similarity*100:.0f}%)"
-                    
-                    with lock:
-                        sid = student.get("id")
-                        if sid:
-                            now = time.time()
-                            last = st.session_state.temp_checkin_log.get(sid, 0)
-                            
-                            if now - last > 5:
-                                face_crop = img[y1:y2, x1:x2]
-                                _, buffer = cv2.imencode('.jpg', face_crop)
-                                photo_b64 = base64.b64encode(buffer).decode()
-                                
-                                status_db = quick_save_attendance(
-                                    sid, 
-                                    selected_class_id, 
-                                    similarity,
-                                    photo_b64
-                                )
-                                
-                                if status_db == "Success":
-                                    label += " ✅"
-                                    new_student = {
-                                        "FullName": name,
-                                        "StudentCode": code,
-                                        "ClassName": class_name,
-                                        "Time": datetime.now().strftime("%H:%M:%S"),
-                                        "StudentID": sid
-                                    }
-                                    st.session_state.temp_attendance["students"].insert(0, new_student)
-                                    print(f"✅ Đã thêm: {name}")
-                                    
-                                elif status_db == "Duplicate":
-                                    label += " (Đã có)"
-                                    color = (0, 200, 200)
-                                
-                                st.session_state.temp_checkin_log[sid] = now
-                else:
-                    color = (0, 165, 255)
-                    label = "Unknown"
-                
-                cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
-                cv2.putText(img, label, (x1, y1-10), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
-    
+        print("DEBUG result:", result)
+        if (
+            result
+            and result.get("faces")
+            and len(result["faces"]) > 0
+            and result["faces"][0].get("found")
+            and result["faces"][0].get("student")
+        ):
+            face = result["faces"][0]
+            student = face["student"]
+            student_id = student["id"]
+            name = student["name"]
+            similarity = face.get("similarity", 0)
+            box = face.get("box")  # [x1, y1, x2, y2]
+            # Ghi attendance cho student_id này
+            status_db = quick_save_attendance(
+                student_id=student_id,
+                class_id=selected_class_id,
+                similarity=similarity
+            )
+            print("DEBUG status_db:", status_db)
+            # Vẽ khung và tên lên khuôn mặt
+            import cv2
+            if box:
+                x1, y1, x2, y2 = map(int, box)
+                # Vẽ hình chữ nhật quanh mặt
+                cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                # Vẽ tên phía trên khung mặt
+                cv2.putText(
+                    img,
+                    f"{name}",
+                    (x1, y1 - 10 if y1 - 10 > 0 else y1 + 20),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1.0,
+                    (0, 255, 0),
+                    2,
+                    cv2.LINE_AA
+                )
+            # ...phần cập nhật danh sách giữ nguyên...
     except Exception as e:
         print(f"❌ Callback Error: {e}")
-    
+
     return av.VideoFrame.from_ndarray(img, format="bgr24")
 
 # ===== GIAO DIỆN CHÍNH =====

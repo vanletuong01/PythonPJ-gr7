@@ -78,11 +78,13 @@ st.markdown("""
 # Thay phần tạo 2 nút (đang dọc) bằng columns để nằm ngang
 st.markdown('<div class="right-container"><div class="top-right-actions">', unsafe_allow_html=True)
 
-col_a, col_b = st.columns([1, 1])
+col_a, col_b, col_c = st.columns([1, 1, 1])
 with col_a:
     btn_vao = st.button("Vào lớp", key="vao_lop_btn")
 with col_b:
     btn_them = st.button("Thêm lớp học", key="them_lop_btn")
+with col_c:
+    btn_kiemtra = st.button("Kiểm tra điểm danh", key="kiemtra_dd_btn")
 
 if btn_them:
     if st.session_state.get("logged_in", False):
@@ -110,5 +112,7 @@ if btn_vao:
             """,
             unsafe_allow_html=True
         )
+if btn_kiemtra:
+    st.switch_page("pages/all_class.py")
 
 st.markdown('</div></div>', unsafe_allow_html=True)
