@@ -25,7 +25,7 @@ def get_student_detail(db: Session, student_id: int):
         "DefaultClass": getattr(s, "DefaultClass", ""),
         "Phone": getattr(s, "Phone", ""),
         "AcademicYear": getattr(s, "AcademicYear", ""),
-        "DateOfBirth": s.DateOfBirth.strftime("%d/%m/%Y") if s.DateOfBirth else "",
+        "DateOfBirth": s.DateOfBirth.strftime("%d/%m/%Y") if hasattr(s.DateOfBirth, "strftime") else (s.DateOfBirth or ""),
         "CitizenID": getattr(s, "CitizenID", ""),
         "PhotoStatus": getattr(s, "PhotoStatus", ""),
         "StudentPhoto": getattr(s, "StudentPhoto", ""),

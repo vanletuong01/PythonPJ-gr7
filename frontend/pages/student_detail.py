@@ -11,10 +11,9 @@ st.set_page_config(
 
 # ===== IMPORT SERVICES =====
 sys.path.append(str(Path(__file__).parent.parent))
-from services.api_client import get_student_detail, get_student_attendance ,remove_student_from_class
+from services.api_client import get_student_detail, get_student_attendance ,remove_student_from_class,update_student_info
 from components.header import render_header
 from components.sidebar_dashboard import render_dashboard_sidebar
-
 # ===== LOAD CSS =====
 css_path = Path(__file__).parent.parent / "public" / "css" / "student_detail.css"
 if css_path.exists():
@@ -87,7 +86,30 @@ st.markdown("</div>", unsafe_allow_html=True)
 st.markdown("<br>", unsafe_allow_html=True)
 b1, b2 = st.columns(2)
 with b1:
-    st.button("LƯU THÔNG TIN (SAVE)", type="primary", use_container_width=True)
+    if st.button("LƯU THÔNG TIN (SAVE)", type="primary", use_container_width=True):
+        # Lấy dữ liệu từ các input
+        full_name = st.session_state["full_name"]
+        default_class = st.session_state["class"]
+        birth_date = st.session_state["birth_date"]
+        phone = st.session_state["phone"]
+        cccd = st.session_state["cccd"]
+
+        # Gọi API cập nhật
+
+        ok = update_student_info(
+            student_id=student_id,
+            full_name=full_name,
+            default_class=default_class,
+            birth_date=birth_date,
+            phone=phone,
+            cccd=cccd
+        )
+        if ok:
+            st.success("Đã lưu thông tin sinh viên.")
+            st.rerun()
+        else:
+            st.error("Lưu thông tin thất bại. Vui lòng thử lại.")
+
 with b2:
     if st.button("XÓA SINH VIÊN (DELETE)", type="secondary", use_container_width=True):
         if class_info.get("ClassID"):

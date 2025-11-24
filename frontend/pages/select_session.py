@@ -12,7 +12,7 @@ st.set_page_config(
 
 # ===== IMPORT =====
 sys.path.append(str(Path(__file__).parent.parent))
-from services.api_client import get_attendance_by_date
+from services.api_client import get_attendance_by_date, get_session_detail
 
 # ===== LOAD CSS =====
 css_path = Path(__file__).parent.parent / "public" / "css" / "attendance.css"
@@ -61,7 +61,8 @@ try:
     session_number = 1
     current_date = start_date
     
-    while current_date <= end_date:
+    # CHỈ TẠO 12 BUỔI, mỗi buổi cách nhau 1 tuần
+    while session_number <= 12 and current_date <= end_date:
         sessions.append({
             "session_number": session_number,
             "date": current_date.strftime("%d/%m/%Y"),
@@ -71,11 +72,7 @@ try:
         })
         current_date += timedelta(weeks=1)
         session_number += 1
-    
-    if len(sessions) > 20:
-        sessions = sessions[:20]
-        st.warning("⚠️ Lớp học có quá nhiều buổi (>20). Chỉ hiển thị 20 buổi đầu.")
-    
+
 except Exception as e:
     st.error(f"Lỗi tính toán ngày học: {e}")
     sessions = []
@@ -133,22 +130,32 @@ st.markdown('<div class="session-list">', unsafe_allow_html=True)
 
 for session in sessions:
     col_session, col_date, col_status, col_action = st.columns([1, 2, 3, 1.5])
-    
+
+    # Lấy số sinh viên đã và chưa điểm danh cho buổi này
+    class_id = class_info.get("ClassID")
+    session_date_api = session['date_raw'].strftime("%Y-%m-%d")
+    data = get_session_detail(class_id, session_date_api)
+    if data and data.get("success"):
+        total_attended = data.get("total_attended", 0)
+        total_absent = data.get("total_absent", 0)
+    else:
+        total_attended = "__"
+        total_absent = "__"
+
     with col_session:
         st.markdown(f"<div style='padding:10px; font-weight:600;'>Buổi {session['session_number']}</div>", unsafe_allow_html=True)
-    
+
     with col_date:
         st.markdown(f"<div style='padding:10px;'>{session['date']}</div>", unsafe_allow_html=True)
-    
+
     with col_status:
         st.markdown(f"""
         <div style='padding:10px; font-size:14px; color:#666;'>
-            Đã điểm danh: <b>__</b> &nbsp;&nbsp; Chưa điểm danh: <b>__</b>
+            Đã điểm danh: <b>{total_attended}</b> &nbsp;&nbsp; Chưa điểm danh: <b>{total_absent}</b>
         </div>
         """, unsafe_allow_html=True)
-    
+
     with col_action:
-        # Nút Chi tiết chuyển sang trang session_detail
         if st.button(f"Chi tiết", key=f"detail_{session['session_number']}", use_container_width=True):
             st.session_state["selected_session"] = session
             st.switch_page("pages/session_detail.py")

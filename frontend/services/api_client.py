@@ -284,3 +284,22 @@ def update_class(class_id, major_id, type_id, year, class_name):
     except Exception as e:
         print(f"❌ [API ERROR] update_class: {e}")
         return False
+
+
+
+def update_student_info(student_id, full_name, default_class, birth_date, phone, cccd):
+    url = f"{API_BASE}/student/update"  # <-- Sửa lại endpoint này
+    data = {
+        "StudentID": student_id,
+        "FullName": full_name,
+        "DefaultClass": default_class,
+        "DateOfBirth": birth_date,
+        "Phone": phone,
+        "CitizenID": cccd
+    }
+    try:
+        resp = requests.post(url, json=data, timeout=TIMEOUT)
+        return resp.status_code == 200
+    except Exception as e:
+        print(f"❌ [API ERROR] update_student_info: {e}")
+        return False

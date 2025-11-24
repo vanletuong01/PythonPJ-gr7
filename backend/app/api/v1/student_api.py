@@ -101,3 +101,16 @@ def get_students_in_class(class_id: int, db: Session = Depends(get_db)):
         }
         for s in results
     ]
+
+@router.post("/update")
+def update_student(data: dict, db: Session = Depends(get_db)):
+    student_id = data.get("StudentID")
+    db.query(Student).filter(Student.StudentID == student_id).update({
+        Student.FullName: data.get("FullName"),
+        Student.DefaultClass: data.get("DefaultClass"),
+        Student.DateOfBirth: data.get("DateOfBirth"),
+        Student.Phone: data.get("Phone"),
+        Student.CitizenID: data.get("CitizenID"),
+    })
+    db.commit()
+    return {"success": True}
