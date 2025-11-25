@@ -3,7 +3,7 @@ import requests
 
 API_URL = os.getenv(
     "API_URL",
-    "https://vaa-attendance.onrender.com/api/v1"
+    "https://pythonpj-gr7.onrender.com/api/v1"
     )
 TIMEOUT = int(os.getenv("API_TIMEOUT", "20"))
 
