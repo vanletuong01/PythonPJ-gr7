@@ -1,8 +1,10 @@
 import os
 import requests
 
-# Giữ nguyên cấu hình của bạn
-API_BASE = os.getenv("API_BASE", "http://127.0.0.1:8000/api/v1")
+API_URL = os.getenv(
+    "API_URL",
+    "https://vaa-attendance.onrender.com/api/v1"
+    )
 TIMEOUT = int(os.getenv("API_TIMEOUT", "20"))
 
 def _safe_json(resp):
@@ -13,7 +15,7 @@ def _safe_json(resp):
 
 # --- CÁC HÀM CŨ CỦA BẠN (KHÔNG ĐỤNG VÀO) ---
 def register_teacher(email: str, password: str, name: str):
-    url = f"{API_BASE}/auth/register"
+    url = f"{API_URL}/auth/register"
     payload = {"email": email, "password": password, "name": name}
     try:
         resp = requests.post(url, json=payload, timeout=TIMEOUT)
@@ -24,7 +26,7 @@ def register_teacher(email: str, password: str, name: str):
         return {"success": False, "message": str(e), "status": 0}
 
 def login_teacher(email: str, password: str):
-    url = f"{API_BASE}/auth/login"
+    url = f"{API_URL}/auth/login"
     payload = {"email": email, "password": password}
     try:
         resp = requests.post(url, json=payload, timeout=TIMEOUT)
@@ -36,41 +38,41 @@ def login_teacher(email: str, password: str):
 
 def get_majors():
     try:
-        resp = requests.get(f"{API_BASE}/class/majors", timeout=TIMEOUT)
+        resp = requests.get(f"{API_URL}/class/majors", timeout=TIMEOUT)
         return resp.json() if resp.status_code == 200 else []
     except:
         return []
 
 def get_types():
     try:
-        resp = requests.get(f"{API_BASE}/class/types", timeout=TIMEOUT)
+        resp = requests.get(f"{API_URL}/class/types", timeout=TIMEOUT)
         return resp.json() if resp.status_code == 200 else []
     except:
         return []
 
 def get_shifts():
     try:
-        resp = requests.get(f"{API_BASE}/class/shifts", timeout=TIMEOUT)
+        resp = requests.get(f"{API_URL}/class/shifts", timeout=TIMEOUT)
         return resp.json() if resp.status_code == 200 else []
     except:
         return []
 
 def get_classes():
     try:
-        resp = requests.get(f"{API_BASE}/class/list", timeout=TIMEOUT)
+        resp = requests.get(f"{API_URL}/class/list", timeout=TIMEOUT)
         return resp.json() if resp.status_code == 200 else []
     except:
         return []
 
 def get_dashboard_stats():
     try:
-        resp = requests.get(f"{API_BASE}/class/dashboard/stats", timeout=TIMEOUT)
+        resp = requests.get(f"{API_URL}/class/dashboard/stats", timeout=TIMEOUT)
         return resp.json() if resp.status_code == 200 else {}
     except:
         return {}
 
 def create_class(data: dict):
-    url = f"{API_BASE}/class/create"
+    url = f"{API_URL}/class/create"
     try:
         resp = requests.post(url, json=data, timeout=TIMEOUT)
         return resp
@@ -82,7 +84,7 @@ def create_class(data: dict):
     
 def get_classes_by_teacher(teacher_id):
     """Lấy danh sách lớp học của giáo viên"""
-    url = f"{API_BASE}/class/by_teacher/{teacher_id}"
+    url = f"{API_URL}/class/by_teacher/{teacher_id}"
     try:
         resp = requests.get(url, timeout=TIMEOUT)
         resp.raise_for_status()
@@ -100,7 +102,7 @@ def get_classes_by_teacher(teacher_id):
 # --- SỬA HÀM NÀY ĐỂ LOGGING LỖI ---
 def get_students_in_class(class_id):
     try:
-        url = f"{API_BASE}/student/students_in_class/{class_id}"
+        url = f"{API_URL}/student/students_in_class/{class_id}"
         print(f"🔍 [API] Getting students for class {class_id}...") # Debug
         resp = requests.get(url, timeout=TIMEOUT)
         if resp.status_code == 200:
@@ -114,7 +116,7 @@ def get_students_in_class(class_id):
 
 def get_attendance_by_date(class_id):
     try:
-        resp = requests.get(f"{API_BASE}/class/attendance_by_date/{class_id}", timeout=TIMEOUT)
+        resp = requests.get(f"{API_URL}/class/attendance_by_date/{class_id}", timeout=TIMEOUT)
         return resp.json() if resp.status_code == 200 else []
     except:
         return []
@@ -129,7 +131,7 @@ def handle_response(res):
 
 # --- SỬA HÀM NÀY ĐỂ LOGGING ---
 def create_student(data: dict):
-    url = f"{API_BASE}/student/add"
+    url = f"{API_URL}/student/add"
     print(f"🚀 [API] Creating student: {data}") # Debug
     try:
         res = requests.post(url, json=data, timeout=TIMEOUT)
@@ -139,7 +141,7 @@ def create_student(data: dict):
         return {"error": str(e)}
 
 def search_students(keyword: str, limit: int = 30):
-    url = f"{API_BASE}/student/search"
+    url = f"{API_URL}/student/search"
     params = {"q": keyword, "limit": limit}
     try:
         res = requests.get(url, params=params, timeout=TIMEOUT)
@@ -151,7 +153,7 @@ def assign_student_to_class(student_id, class_id):
     """
     Gán sinh viên vào lớp.
     """
-    url = f"{API_BASE}/class/assign"
+    url = f"{API_URL}/class/assign"
     
     # --- SỬA Ở ĐÂY: Đổi StudentID -> student_id, ClassID -> class_id ---
     payload = {
@@ -177,7 +179,7 @@ def assign_student_to_class(student_id, class_id):
         raise e
 # --- CÁC HÀM KHÁC GIỮ NGUYÊN ---
 def get_student_attendance(class_id, student_id):
-    url = f"{API_BASE}/attendance/history/{class_id}/{student_id}"
+    url = f"{API_URL}/attendance/history/{class_id}/{student_id}"
     try:
         resp = requests.get(url, timeout=TIMEOUT)
         if resp.status_code == 200:
@@ -187,7 +189,7 @@ def get_student_attendance(class_id, student_id):
         return []
 
 def get_student_detail(student_id):
-    url = f"{API_BASE}/student/detail/{student_id}"
+    url = f"{API_URL}/student/detail/{student_id}"
     try:
         resp = requests.get(url)
         if resp.ok:
@@ -200,7 +202,7 @@ def get_student_detail(student_id):
 
 
 def get_attendance_session_detail(class_id, date):
-    url = f"{API_BASE}/attendance/session/{class_id}/{date}"
+    url = f"{API_URL}/attendance/session/{class_id}/{date}"
     try:
         resp = requests.get(url, timeout=TIMEOUT)
         if resp.status_code == 200:
@@ -214,7 +216,7 @@ def get_session_detail(class_id, session_date):
     Lấy chi tiết buổi học (danh sách SV đã/chưa điểm danh)
     session_date: format "YYYY-MM-DD" (VD: "2025-11-17")
     """
-    url = f"{API_BASE}/attendance/session-detail/{class_id}/{session_date}"
+    url = f"{API_URL}/attendance/session-detail/{class_id}/{session_date}"
     try:
         resp = requests.get(url, timeout=TIMEOUT)
         resp.raise_for_status()
@@ -233,7 +235,7 @@ def manual_checkin(study_id: int, session_date: str):
     """
     try:
         response = requests.post(
-            f"{API_BASE}/attendance/manual-checkin",
+            f"{API_URL}/attendance/manual-checkin",
             params={
                 "study_id": study_id,
                 "session_date": session_date
@@ -250,7 +252,7 @@ def manual_checkin(study_id: int, session_date: str):
         return {"success": False, "message": str(e)}
 
 def get_all_classes():
-    url = f"{API_BASE}/class/"
+    url = f"{API_URL}/class/"
     try:
         resp = requests.get(url, timeout=TIMEOUT)
         if resp.status_code == 200:
@@ -261,7 +263,7 @@ def get_all_classes():
         return []
 
 def remove_student_from_class(class_id, student_id):
-    url = f"{API_BASE}/class/remove_student"
+    url = f"{API_URL}/class/remove_student"
     try:
         resp = requests.post(url, json={"ClassID": class_id, "StudentID": student_id}, timeout=TIMEOUT)
         return resp.status_code == 200
@@ -270,7 +272,7 @@ def remove_student_from_class(class_id, student_id):
         return False
 
 def update_class(class_id, major_id, type_id, year, class_name):
-    url = f"{API_BASE}/class/update"
+    url = f"{API_URL}/class/update"
     data = {
         "ClassID": class_id,
         "MajorID": major_id,
@@ -288,7 +290,7 @@ def update_class(class_id, major_id, type_id, year, class_name):
 
 
 def update_student_info(student_id, full_name, default_class, birth_date, phone, cccd):
-    url = f"{API_BASE}/student/update"  # <-- Sửa lại endpoint này
+    url = f"{API_URL}/student/update" 
     data = {
         "StudentID": student_id,
         "FullName": full_name,
@@ -301,5 +303,5 @@ def update_student_info(student_id, full_name, default_class, birth_date, phone,
         resp = requests.post(url, json=data, timeout=TIMEOUT)
         return resp.status_code == 200
     except Exception as e:
-        print(f"❌ [API ERROR] update_student_info: {e}")
+        print(f"[API ERROR] update_student_info: {e}")
         return False
