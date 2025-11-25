@@ -17,3 +17,16 @@ class LoginOut(BaseModel):
     phone: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+class LoginIn(BaseModel):
+    email: str  # Đổi EmailStr → str
+    password: str
+
+class LoginOut(BaseModel):
+    id_login: int
+    email: str  # Đổi EmailStr → str
+    name: str | None = None
+    phone: str | None = None
+
+    model_config = ConfigDict(from_attributes=True)
+

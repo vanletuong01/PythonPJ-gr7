@@ -175,15 +175,20 @@ def assign_student_to_class(student_id, class_id):
     except Exception as e:
         print(f"❌ [API ERROR] Assign Failed: {e}")
         raise e
-# --- CÁC HÀM KHÁC GIỮ NGUYÊN ---
+
+
 def get_student_attendance(class_id, student_id):
+    # Lưu ý: Endpoint này phải khớp với bên backend
     url = f"{API_BASE}/attendance/history/{class_id}/{student_id}"
     try:
         resp = requests.get(url, timeout=TIMEOUT)
         if resp.status_code == 200:
             return resp.json()
-        return []
-    except:
+        else:
+            print(f"⚠️ API Lỗi {resp.status_code}: {resp.text}")
+            return []
+    except Exception as e:
+        print(f"❌ Lỗi kết nối API: {e}")
         return []
 
 def get_student_detail(student_id):
@@ -226,29 +231,35 @@ def get_session_detail(class_id, session_date):
 def manual_checkin(study_id: int, session_date: str):
     """
     Điểm danh thủ công
-    
-    Args:
-        study_id: ID trong bảng study
-        session_date: Ngày điểm danh (YYYY-MM-DD)
     """
     try:
+        # Sửa params= thành json=
+        payload = {
+            "study_id": study_id,
+            "session_date": session_date
+        }
+        
         response = requests.post(
             f"{API_BASE}/attendance/manual-checkin",
-            params={
-                "study_id": study_id,
-                "session_date": session_date
-            },
+            json=payload,  # <--- QUAN TRỌNG: Dùng json
             timeout=10
         )
-        response.raise_for_status()
+        
+        # Nếu server trả về lỗi 500/400, lấy nội dung lỗi
+        if response.status_code != 200:
+            try:
+                err_data = response.json()
+                return {"success": False, "message": err_data.get("message", response.text)}
+            except:
+                return {"success": False, "message": f"HTTP Error {response.status_code}"}
+
         return response.json()
-    except requests.exceptions.HTTPError as e:
-        print(f"[API ERROR] manual_checkin: {e}")
-        return {"success": False, "message": str(e)}
+        
     except Exception as e:
         print(f"[API ERROR] manual_checkin: {e}")
         return {"success": False, "message": str(e)}
 
+        
 def get_all_classes():
     url = f"{API_BASE}/class/"
     try:
@@ -303,3 +314,16 @@ def update_student_info(student_id, full_name, default_class, birth_date, phone,
     except Exception as e:
         print(f"❌ [API ERROR] update_student_info: {e}")
         return False
+
+
+def get_export_data(class_id):
+    """Lấy dữ liệu điểm danh để xuất Excel"""
+    url = f"{API_BASE}/attendance/export/{class_id}"
+    try:
+        resp = requests.get(url, timeout=30) # Timeout lâu hơn xíu vì dữ liệu nhiều
+        if resp.status_code == 200:
+            return resp.json()
+        return []
+    except Exception as e:
+        print(f"Export API Error: {e}")
+        return []
