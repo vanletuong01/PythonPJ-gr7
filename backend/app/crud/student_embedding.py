@@ -1,6 +1,5 @@
-# backend/app/crud/student_embedding.py
-
 import json
+import numpy as np
 from backend.app.db.database import get_connection
 
 # Lưu embedding (512 floats) vào DB
