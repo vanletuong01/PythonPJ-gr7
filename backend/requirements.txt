@@ -29,5 +29,7 @@ cloudinary==1.41.0
 # Utilities
 pydantic==2.12.4
 
+python-jose[cryptography]==3.5.0
 passlib[bcrypt]==1.7.4
 bcrypt==4.2.1
+
