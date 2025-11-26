@@ -1,174 +1,182 @@
-/* ===== GLOBAL & RESET ===== */
+/* =========================================
+   1. GLOBAL & RESET
+   ========================================= */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
     font-family: 'Segoe UI', Arial, sans-serif;
 }
 
-/* 1. XÓA KHOẢNG TRẮNG ĐẦU TRANG */
-.block-container {
-    padding-top: 10px !important;
-    /* Giảm xuống 10px hoặc 0px tùy ý */
-    padding-bottom: 0px !important;
-    max-width: 100% !important;
+body,
+.stApp {
+    background-color: #f8f9fa !important;
+    /* Màu nền xám nhẹ dễ chịu */
 }
 
-/* 2. ẨN THANH TOOLBAR CỦA STREAMLIT (Nếu muốn ẩn luôn cái thanh menu 3 gạch ở góc phải trên) */
+/* Xóa khoảng trắng thừa của Streamlit */
+.block-container {
+    padding-top: 2rem !important;
+    padding-bottom: 5rem !important;
+    max-width: 1000px !important;
+    /* Giới hạn chiều rộng để nhìn gọn hơn */
+}
+
+/* Ẩn menu mặc định góc phải */
 header[data-testid="stHeader"] {
     display: none !important;
 }
 
-/* --- 1. FIX LỖI KHOẢNG TRẮNG CỦA STREAMLIT --- */
-.block-container {
-    padding-top: 20px !important;
-    /* Đẩy sát lên trên */
-    padding-bottom: 40px !important;
-    max-width: 100% !important;
-}
-
-/* ===== BODY ===== */
-body,
-.stApp {
-    background: #f7f7fa !important;
-}
-
-/* ===== NÚT BACK (QUAY LẠI) ===== */
-.back-container {
-    margin-bottom: 10px;
-}
-
-/* ===== MAIN CONTAINER (GIỮ NGUYÊN STYLE CŨ CỦA BẠN) ===== */
-.student-detail-container {
-    max-width: 800px;
-    /* Cho rộng hơn xíu */
-    margin: 0 auto;
-    /* Căn giữa trang */
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.07);
-    padding: 32px 36px 24px 36px;
-}
-
-.student-detail-title {
-    font-size: 22px;
+/* =========================================
+   2. TIÊU ĐỀ & HEADER
+   ========================================= */
+.student-title {
+    font-size: 26px;
     font-weight: 700;
-    margin-bottom: 18px;
-    color: #22223b;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
+    color: #1a202c;
+    margin-bottom: 0px;
 }
 
-/* ===== FORM ===== */
-.student-detail-form {
-    margin-bottom: 18px;
+.sub-header {
+    font-size: 14px;
+    color: #718096;
+    margin-bottom: 20px;
 }
 
-/* Chỉnh lại Input của Streamlit cho đẹp giống CSS cũ */
+/* =========================================
+   3. INPUT FORM (TÙY BIẾN Ô NHẬP LIỆU)
+   ========================================= */
+/* Làm đẹp ô nhập liệu */
 div[data-testid="stTextInput"] input {
-    background-color: #f9fafb;
-    border: 1.5px solid #e5e7eb;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
-    padding: 8px 12px;
+    padding: 10px 12px;
+    color: #2d3748;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 div[data-testid="stTextInput"] input:focus {
-    border-color: #3b82f6;
-    background-color: #fff;
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
 }
 
-/* ===== BUTTONS ===== */
-.btn-row {
-    display: flex;
-    gap: 18px;
-    margin: 18px 0 10px 0;
-}
-
-/* CSS giả lập nút (Vì Streamlit button khó style trực tiếp class) */
-/* Chúng ta sẽ dùng st.button native nhưng bọc trong container */
-
-/* ===== STATUS & ACTIONS ===== */
-.status-row {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    margin-bottom: 16px;
-}
-
-.status-label {
-    font-size: 16px;
+div[data-testid="stTextInput"] label {
+    font-size: 14px;
     font-weight: 600;
-    color: #22223b;
+    color: #4a5568;
+    margin-bottom: 4px;
 }
 
-.status-yes {
-    background: #d1fae5;
-    color: #065f46;
-    border-radius: 8px;
-    padding: 6px 18px;
-    font-weight: 700;
-    font-size: 16px;
-}
-
-.status-no {
-    background: #fee2e2;
-    color: #991b1b;
-    border-radius: 8px;
-    padding: 6px 18px;
-    font-weight: 700;
-    font-size: 16px;
-}
-
-/* ===== ATTENDANCE LIST (BẢNG ĐIỂM DANH) ===== */
-.attendance-list {
-    margin-top: 24px;
-}
-
-.attendance-item {
+/* =========================================
+   4. TRẠNG THÁI ẢNH
+   ========================================= */
+.status-box {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    background: #f3f4f6;
-    border-radius: 10px;
-    padding: 10px 18px;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-top: 10px;
+}
+
+.status-tag-yes {
+    background: #c6f6d5;
+    color: #22543d;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.status-tag-no {
+    background: #fed7d7;
+    color: #822727;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+/* =========================================
+   5. LỊCH SỬ ĐIỂM DANH
+   ========================================= */
+.history-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #2d3748;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 10px;
+}
+
+/* Item trong danh sách */
+.att-item {
+    display: flex;
+    justify_content: space-between;
+    align-items: center;
+    padding: 12px 20px;
     margin-bottom: 10px;
-    font-size: 16px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-left: 5px solid #cbd5e0;
+    /* Mặc định */
+    transition: transform 0.1s;
 }
 
-.attendance-item .buoi {
+.att-item:hover {
+    transform: translateY(-2px);
+}
+
+/* Style Có mặt */
+.att-present {
+    border-left-color: #48bb78;
+    /* Xanh lá */
+    background-color: #f0fff4;
+}
+
+/* Style Vắng */
+.att-absent {
+    border-left-color: #f56565;
+    /* Đỏ */
+    background-color: #fff5f5;
+}
+
+.att-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.att-session {
     font-weight: 700;
-    color: #22223b;
-    width: 15%;
-}
-
-.attendance-item .date {
-    color: #6b7280;
+    color: #2d3748;
     font-size: 15px;
-    width: 30%;
 }
 
-.attendance-item .status {
+.att-date {
+    font-size: 13px;
+    color: #718096;
+}
+
+.att-status {
     font-weight: 600;
-    color: #10b981;
-    width: 30%;
+    font-size: 14px;
 }
 
-.attendance-item .status.miss {
-    color: #ef4444;
+.status-ok {
+    color: #2f855a;
 }
 
-.attendance-item .time {
-    font-weight: 700;
-    color: #3b82f6;
-    font-size: 15px;
-    text-align: right;
-    width: 25%;
+.status-miss {
+    color: #c53030;
 }
 
-/* Mobile Responsive */
-@media (max-width: 900px) {
-    .student-detail-container {
-        max-width: 95vw;
-        padding: 20px;
-    }
+.att-time {
+    font-family: monospace;
+    color: #4a5568;
+    background: #edf2f7;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 13px;
 }

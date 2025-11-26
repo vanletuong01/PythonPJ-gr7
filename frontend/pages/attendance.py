@@ -74,6 +74,16 @@ try:
 except:
     SESSION_DATE_STR = datetime.now().strftime("%Y-%m-%d")
 
+today = datetime.now().date()
+try:
+    session_date = datetime.strptime(SESSION_DATE_STR, "%Y-%m-%d").date()
+except:
+    session_date = today
+
+if today != session_date:
+    st.error("Chỉ được điểm danh trong đúng ngày học!")
+    st.stop()
+
 # ===== HÀM DB (PORT 3306) =====
 def get_db_connection():
     return pymysql.connect(
