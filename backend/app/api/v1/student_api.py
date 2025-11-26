@@ -14,42 +14,41 @@ router = APIRouter(tags=["Student"])
 
 @router.get("/search")
 def search_students(q: str = Query(..., min_length=1), limit: int = 30, db: Session = Depends(get_db)):
-    # Tìm theo tên hoặc mã số sinh viên (StudentCode)
-    results = (
-        db.query(
-            Student,
-            Major.Full_name_mj,
-            Type.TypeName
-        )
-        .join(Major, Student.MajorID == Major.MajorID)
-        .join(Type, Student.TypeID == Type.TypeID)
-        .filter(
-            (Student.FullName.ilike(f"%{q}%")) |
-            (Student.StudentCode.ilike(f"%{q}%"))
-        )
-        .limit(limit)
-        .all()
-    )
-    # Trả về dữ liệu dạng list[dict]
-    return [
-        {
+    # 1. IN RA MÀN HÌNH ĐEN ĐỂ KIỂM TRA XEM FILE NÀY CÓ CHẠY KHÔNG
+    print(f"🔥🔥🔥 DEBUG SERVER: Đang tìm kiếm từ khóa = '{q}'")
+
+    # 2. CHỈ TÌM TRONG BẢNG STUDENT (Bỏ qua Major và Type để test)
+    results = db.query(Student).filter(
+        (Student.FullName.ilike(f"%{q}%")) |
+        (Student.StudentCode.ilike(f"%{q}%"))
+    ).limit(limit).all()
+
+    print(f"🔥🔥🔥 DEBUG SERVER: Tìm thấy {len(results)} kết quả")
+
+    # 3. TRẢ VỀ DỮ LIỆU ĐƠN GIẢN (Để không bị lỗi thiếu trường)
+    data_response = []
+    for s in results:
+        data_response.append({
             "StudentID": s.StudentID,
             "FullName": s.FullName,
             "StudentCode": s.StudentCode,
-            "DefaultClass": getattr(s, "DefaultClass", None),
-            "Phone": getattr(s, "Phone", None),
+            "DefaultClass": getattr(s, "DefaultClass", ""),
+            "Phone": getattr(s, "Phone", ""),
             "DateOfBirth": getattr(s, "DateOfBirth", None),
-            "CitizenID": getattr(s, "CitizenID", None),
-            "AcademicYear": getattr(s, "AcademicYear", None),
-            "Full_name_mj": full_name_mj,
-            "TypeName": type_name,
+            "CitizenID": getattr(s, "CitizenID", ""),
+            "AcademicYear": getattr(s, "AcademicYear", ""),
+            
+            # Tạm thời để trống 2 cái này để test xem SV có hiện ra không
+            "Full_name_mj": "Đang test", 
+            "TypeName": "Đang test",
+            
             "ClassID": getattr(s, "ClassID", None),
             "MajorID": getattr(s, "MajorID", None),
             "TypeID": getattr(s, "TypeID", None),
-            "PhotoStatus": getattr(s, "PhotoStatus", None)
-        }
-        for s, full_name_mj, type_name in results
-    ]
+            "PhotoStatus": getattr(s, "PhotoStatus", "NONE")
+        })
+    
+    return data_response
 
 @router.post("/add")
 def add_student(data: StudentCreate, db: Session = Depends(get_db)):
