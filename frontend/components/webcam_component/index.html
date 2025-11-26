@@ -87,23 +87,13 @@
         let capturing = false;
         let streamlitReady = false;
 
-        const POSES = [
-            "Nhìn thẳng",
-            "Quay trái",
-            "Quay phải",
-            "Ngẩng lên",
-            "Cúi xuống"
-        ];
+        const POSES = ["Nhìn thẳng", "Quay trái", "Quay phải", "Ngẩng lên", "Cúi xuống"];
 
-        // Debug log
         function log(msg) {
             console.log(msg);
             debugEl.textContent = msg;
         }
 
-        log("🔥 Script loaded");
-
-        // ===== STREAMLIT API =====
         function sendToStreamlit(data) {
             window.parent.postMessage({
                 isStreamlitMessage: true,
@@ -114,80 +104,57 @@
 
         function setComponentReady() {
             log("✅ Sending componentReady");
-
             window.parent.postMessage({
-                isStreamlitMessage: true,
-                type: "streamlit:componentReady",
-                apiVersion: 1
+                isStreamlitMessage: true, type: "streamlit:componentReady", apiVersion: 1
             }, "*");
-
             window.parent.postMessage({
-                isStreamlitMessage: true,
-                type: "streamlit:setFrameHeight",
-                height: 600
+                isStreamlitMessage: true, type: "streamlit:setFrameHeight", height: 650
             }, "*");
-
             streamlitReady = true;
         }
 
         // ===== CAMERA =====
-        log("🎥 Requesting camera...");
-
         navigator.mediaDevices.getUserMedia({
-            video: {
-                width: { ideal: 640 },
-                height: { ideal: 480 },
-                facingMode: "user"
-            }
-        })
-            .then(stream => {
-                log("✅ Camera granted");
-                video.srcObject = stream;
+            video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" }
+        }).then(stream => {
+            log("✅ Camera granted");
+            video.srcObject = stream;
+            instructionEl.textContent = 'Sẵn sàng...';
+            statusEl.textContent = "✅ Camera OK. Chờ lệnh từ server...";
+            statusEl.style.background = "#d1fae5";
+            setComponentReady();
+        }).catch(err => {
+            log("❌ Camera error: " + err.message);
+            statusEl.textContent = "Lỗi Camera: " + err.message;
+        });
 
-                instructionEl.textContent = 'Nhấn "Bắt đầu chụp"';
-                statusEl.textContent = "✅ Camera sẵn sàng";
-                statusEl.style.background = "#d1fae5";
-                statusEl.style.color = "#065f46";
-
-                setComponentReady();
-            })
-            .catch(err => {
-                log("❌ Camera error: " + err.message);
-
-                instructionEl.textContent = "❌ Không truy cập được camera";
-                statusEl.textContent = err.message;
-                statusEl.style.background = "#fee2e2";
-                statusEl.style.color = "#991b1b";
-
-                setComponentReady();
-            });
-
-        // ===== CAPTURE =====
+        // ===== CAPTURE LOGIC =====
         async function startCapture() {
-            if (capturing) {
-                log("⚠️ Already capturing");
-                return;
-            }
-
+            if (capturing) return;
             capturing = true;
-            log("🚀 Start capture");
+            log("🚀 Start capture sequence");
 
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
 
             for (let i = 0; i < 25; i++) {
+                // Check lại nếu video bị mất kết nối
+                if (video.readyState !== 4) {
+                    await new Promise(r => setTimeout(r, 100));
+                }
+
                 const poseIdx = Math.floor(i / 5);
                 const pose = POSES[poseIdx];
 
                 instructionEl.textContent = `📸 ${pose}`;
                 statusEl.textContent = `Đang chụp ${i + 1}/25...`;
-                log(`📸 Capturing ${i + 1}/25`);
 
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 ctx.drawImage(video, 0, 0);
 
-                const imageData = canvas.toDataURL("image/jpeg", 0.90);
+                // Giảm chất lượng xuống 0.8 để gửi nhanh hơn qua Cloudflare
+                const imageData = canvas.toDataURL("image/jpeg", 0.80);
 
                 sendToStreamlit({
                     image: imageData,
@@ -195,14 +162,17 @@
                     pose: pose
                 });
 
-                await new Promise(r => setTimeout(r, 500)); // ← Tăng từ 400ms lên 500ms
+                // Tăng delay lên 600ms để Streamlit kịp xử lý
+                await new Promise(r => setTimeout(r, 600));
             }
 
-            instructionEl.textContent = "✅ Hoàn tất!";
-            statusEl.textContent = "Đã chụp xong 25 ảnh";
-            statusEl.style.background = "#dbeafe";
-            log("✅ Capture done");
+            instructionEl.textContent = "✅ Đang hoàn tất...";
+            statusEl.textContent = "Đang gửi dữ liệu cuối cùng...";
 
+            // --- QUAN TRỌNG: Chờ 1.5 giây để đảm bảo ảnh 25 đã được Python nhận ---
+            await new Promise(r => setTimeout(r, 1500));
+
+            log("✅ Capture sequence finished");
             capturing = false;
 
             sendToStreamlit({
@@ -211,20 +181,15 @@
             });
         }
 
-        // ===== LISTEN TO STREAMLIT =====
+        // ===== LISTEN =====
         window.addEventListener("message", (event) => {
             if (event.data && event.data.type === "streamlit:render") {
                 const args = event.data.args;
-                log(`📩 Received: start_capture=${args?.start_capture}`);
-
                 if (args && args.start_capture === true && !capturing && streamlitReady) {
-                    log("🚀 Triggering capture in 1s...");
-                    setTimeout(startCapture, 1000); // ← Delay 1s để đảm bảo
+                    setTimeout(startCapture, 1000);
                 }
             }
         });
-
-        log("✅ Event listener ready");
     </script>
 </body>
 

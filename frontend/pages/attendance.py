@@ -8,6 +8,7 @@ import threading
 import pymysql
 import os
 import queue
+import time  # <--- Thêm thư viện time để xử lý delay
 
 # --- LOAD BIẾN MÔI TRƯỜNG ---
 from dotenv import load_dotenv
@@ -21,15 +22,20 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-# Import AI (Nếu file này chưa có thì bạn cần tạo hoặc kiểm tra lại đường dẫn)
+# Import AI
 try:
     from backend.app.ai.smart_face_attendance import match_image_and_check_real
 except ImportError:
-    # Hàm giả lập nếu chưa có AI module để tránh crash
     def match_image_and_check_real(img): return None
-    # st.error("⚠️ Không tìm thấy module AI. Đang chạy chế độ giả lập.")
 
-# ===== CSS STYLING =====
+# ===== CẤU HÌNH STUN SERVER (QUAN TRỌNG ĐỂ CHẠY ONLINE) =====
+from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
+
+RTC_CONFIGURATION = RTCConfiguration(
+    {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+)
+
+# ===== CSS STYLING (GIỮ NGUYÊN CỦA BẠN) =====
 st.markdown("""
     <style>
         .att-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 10px; color: white; margin-bottom: 20px; }
@@ -42,7 +48,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ===== QUEUE TOÀN CỤC (Để chuyển dữ liệu từ luồng Camera sang UI) =====
+# ===== QUEUE TOÀN CỤC =====
 @st.cache_resource
 def get_result_queue():
     return queue.Queue()
@@ -65,13 +71,11 @@ if not selected_session or not class_info:
 
 selected_class_id = class_info.get("ClassID")
 
-# Xử lý ngày học (YYYY-MM-DD)
+# Xử lý ngày học
 try:
-    # Lấy ngày từ object session, ưu tiên 'date_raw' (datetime object) nếu có
     if isinstance(selected_session.get("date_raw"), datetime):
         SESSION_DATE_STR = selected_session["date_raw"].strftime("%Y-%m-%d")
     else:
-        # Fallback nếu chỉ có string
         raw_date = selected_session.get("value") or selected_session.get("date")
         if isinstance(raw_date, str) and "/" in raw_date:
              SESSION_DATE_STR = datetime.strptime(raw_date, "%d/%m/%Y").strftime("%Y-%m-%d")
@@ -80,7 +84,7 @@ try:
 except:
     SESSION_DATE_STR = datetime.now().strftime("%Y-%m-%d")
 
-# Kiểm tra ngày hiện tại (Chặn điểm danh sai ngày)
+# Kiểm tra ngày hiện tại
 today = datetime.now().date()
 try:
     session_date = datetime.strptime(SESSION_DATE_STR, "%Y-%m-%d").date()
@@ -105,12 +109,10 @@ def get_db_connection():
     )
 
 def load_attendance_data():
-    """Tải danh sách sinh viên và trạng thái điểm danh hiện tại"""
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # 1. Lấy danh sách ĐÃ điểm danh trong ngày
         cursor.execute("""
             SELECT s.StudentID, st.FullName, st.StudentCode, a.Time
             FROM attendance a
@@ -121,7 +123,6 @@ def load_attendance_data():
         """, (selected_class_id, SESSION_DATE_STR))
         attended = list(cursor.fetchall())
         
-        # 2. Lấy TOÀN BỘ sinh viên trong lớp
         cursor.execute("""
             SELECT s.StudyID, st.StudentID, st.FullName, st.StudentCode
             FROM study s
@@ -131,26 +132,24 @@ def load_attendance_data():
         all_students = list(cursor.fetchall())
         
         conn.close()
-        
-        # Format lại thời gian cho đẹp
         for row in attended:
             row["Time"] = str(row["Time"]) if row["Time"] else "Thủ công"
-            
         return attended, all_students
     except Exception as e:
         st.error(f"❌ Lỗi kết nối CSDL: {e}")
         return [], []
 
-# Load dữ liệu lần đầu vào Session State
 if not st.session_state.att_loaded:
     att, all_s = load_attendance_data()
     st.session_state.att_students = att
     st.session_state.all_students_cache = all_s
     st.session_state.att_loaded = True
 
-# ===== CALLBACK VIDEO (XỬ LÝ AI & LƯU DB) =====
+# ===== CALLBACK VIDEO (ĐÃ ĐƯỢC TỐI ƯU HÓA) =====
 def create_video_callback(class_id, date_str, queue_ref):
-    """Tạo hàm xử lý video để truyền vào webrtc"""
+    # Cache để nhớ sinh viên nào vừa xử lý, tránh spam DB
+    processed_cache = {}
+    
     def video_callback(frame):
         img = frame.to_ndarray(format="bgr24")
         
@@ -158,10 +157,8 @@ def create_video_callback(class_id, date_str, queue_ref):
             # Gọi AI nhận diện
             result = match_image_and_check_real(img)
             
-            # Nếu có kết quả
             if result and result.get("faces"):
                 for face in result["faces"]:
-                    # Chỉ xử lý nếu tìm thấy người (found=True)
                     if face.get("found") and face.get("student"):
                         student = face["student"]
                         student_id = student.get("id")
@@ -169,67 +166,72 @@ def create_video_callback(class_id, date_str, queue_ref):
                         similarity = face.get("similarity", 0)
                         box = face.get("box")
                         
-                        msg = "Error"
-                        try:
-                            # --- MỞ KẾT NỐI DB RIÊNG (Thread-safe) ---
-                            conn = pymysql.connect(
-                                host=os.getenv("DB_HOST", "localhost"),
-                                user=os.getenv("DB_USER", "root"),
-                                password=os.getenv("DB_PASSWORD", ""),
-                                database=os.getenv("DB_NAME", "python_project"),
-                                port=int(os.getenv("DB_PORT", 3306)),
-                                charset="utf8mb4"
-                            )
-                            cursor = conn.cursor()
-                            
-                            # 1. Tìm StudyID của sinh viên trong lớp này
-                            cursor.execute("SELECT StudyID FROM study WHERE StudentID = %s AND ClassID = %s", (student_id, class_id))
-                            study_row = cursor.fetchone()
-                            
-                            if study_row:
-                                study_id = study_row[0]
-                                # 2. Kiểm tra đã điểm danh chưa
-                                cursor.execute("SELECT AttendanceID FROM attendance WHERE StudyID = %s AND Date = %s", (study_id, date_str))
-                                if cursor.fetchone():
-                                    msg = "Duplicate" # Đã có rồi
-                                else:
-                                    # 3. LƯU VÀO DB
-                                    print(f"📝 [INSERT] {name} - Sim: {similarity}")
-                                    cursor.execute("""
-                                        INSERT INTO attendance (StudyID, Date, Time, PhotoPath)
-                                        VALUES (%s, %s, CURTIME(), %s)
-                                    """, (study_id, date_str, f"AI:{similarity:.2f}"))
-                                    conn.commit()
-                                    msg = "Success"
-                            else:
-                                msg = "NotInClass" # Sinh viên không thuộc lớp này
+                        # --- LOGIC TỐI ƯU: Chỉ kết nối DB sau mỗi 3 giây ---
+                        current_time = time.time()
+                        last_processed = processed_cache.get(student_id, 0)
+                        
+                        msg = ""
+                        color = (0, 255, 0) # Màu mặc định xanh lá
+
+                        if current_time - last_processed > 3.0:
+                            # Đã qua 3 giây, cho phép xử lý DB
+                            try:
+                                conn = get_db_connection()
+                                cursor = conn.cursor()
                                 
-                            conn.close()
-                        except Exception as db_err:
-                            print(f"🔥 [DB ERROR] {db_err}")
+                                # Tìm StudyID
+                                cursor.execute("SELECT StudyID FROM study WHERE StudentID = %s AND ClassID = %s", (student_id, class_id))
+                                study_row = cursor.fetchone()
+                                
+                                if study_row:
+                                    study_id = study_row['StudyID']
+                                    # Check đã điểm danh chưa
+                                    cursor.execute("SELECT AttendanceID FROM attendance WHERE StudyID = %s AND Date = %s", (study_id, date_str))
+                                    if cursor.fetchone():
+                                        msg = "Duplicate"
+                                    else:
+                                        # Lưu vào DB
+                                        cursor.execute("""
+                                            INSERT INTO attendance (StudyID, Date, Time, PhotoPath)
+                                            VALUES (%s, %s, CURTIME(), %s)
+                                        """, (study_id, date_str, f"AI:{similarity:.2f}"))
+                                        conn.commit()
+                                        msg = "Success"
+                                        print(f"✅ Đã lưu điểm danh: {name}")
+                                else:
+                                    msg = "NotInClass"
+                                    
+                                conn.close()
+                                
+                                # Cập nhật cache thời gian
+                                processed_cache[student_id] = current_time
 
-                        # Gửi thông báo ra giao diện (chỉ khi thành công)
-                        if msg == "Success":
-                            queue_ref.put({
-                                "StudentID": student_id,
-                                "FullName": name,
-                                "StudentCode": student.get("mssv", "Unknown"),
-                                "Time": datetime.now().strftime("%H:%M:%S")
-                            })
+                                # Đẩy ra queue nếu thành công
+                                if msg == "Success":
+                                    queue_ref.put({
+                                        "StudentID": student_id,
+                                        "FullName": name,
+                                        "StudentCode": student.get("mssv", "Unknown"),
+                                        "Time": datetime.now().strftime("%H:%M:%S")
+                                    })
+                                
+                            except Exception as db_err:
+                                print(f"🔥 [DB ERROR] {db_err}")
+                        
+                        # Set màu sắc và nhãn hiển thị
+                        label_suffix = ""
+                        if msg == "Duplicate" or (current_time - last_processed <= 3.0 and processed_cache.get(student_id)):
+                             color = (0, 165, 255) # Cam (Đã xong)
+                             label_suffix = " (Da DD)"
+                        elif msg == "NotInClass":
+                             color = (0, 0, 255) # Đỏ
+                             label_suffix = " (Sai Lop)"
 
-                        # Vẽ khung lên hình ảnh video
+                        # Vẽ khung
                         if box:
                             x1, y1, x2, y2 = map(int, box)
-                            # Chọn màu khung
-                            if msg == "Success": color = (0, 255, 0)      # Xanh lá: Mới điểm danh
-                            elif msg == "Duplicate": color = (0, 165, 255) # Cam: Đã điểm danh rồi
-                            elif msg == "NotInClass": color = (0, 0, 255)  # Đỏ: Không đúng lớp
-                            else: color = (128, 128, 128)
-                            
                             cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
-                            label_text = f"{name}"
-                            if msg == "Duplicate": label_text += " (Da DD)"
-                            cv2.putText(img, label_text, (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
+                            cv2.putText(img, f"{name}{label_suffix}", (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
 
         except Exception as e:
             print(f"AI Error: {e}")
@@ -237,7 +239,7 @@ def create_video_callback(class_id, date_str, queue_ref):
         return av.VideoFrame.from_ndarray(img, format="bgr24")
     return video_callback
 
-# ===== GIAO DIỆN CHÍNH =====
+# ===== GIAO DIỆN CHÍNH (FRONTEND) =====
 col_back, col_info = st.columns([0.5, 9.5])
 with col_back:
     if st.button("←", help="Quay lại danh sách buổi"):
@@ -246,7 +248,6 @@ with col_back:
 
 with col_info:
     session_label = selected_session.get('label') or f"Ngày {SESSION_DATE_STR}"
-    # Nếu là dict từ select_session, có thể có key 'session_number'
     if 'session_number' in selected_session:
         session_label = f"Buổi {selected_session['session_number']} - {selected_session['date']}"
         
@@ -270,20 +271,19 @@ m3.markdown(f'<div class="metric-box"><div class="metric-value" style="color:#ef
 st.markdown("<br>", unsafe_allow_html=True)
 
 # PHẦN CAMERA VÀ DANH SÁCH
-from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
-
 col_cam, col_list = st.columns([1.5, 1])
 
 with col_cam:
     st.info("💡 Hướng dẫn: Giữ mặt trong khung hình khoảng 2-3 giây để hệ thống nhận diện.")
     
-    # Tạo hàm callback với tham số hiện tại
+    # Tạo callback với biến Queue
     callback_func = create_video_callback(selected_class_id, SESSION_DATE_STR, result_queue)
     
+    # WebRTC Streamer với cấu hình STUN
     webrtc_streamer(
         key="attendance_cam",
         mode=WebRtcMode.SENDRECV,
-        rtc_configuration=RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}),
+        rtc_configuration=RTC_CONFIGURATION, # <--- Fix Cloudflare
         video_frame_callback=callback_func,
         media_stream_constraints={"video": True, "audio": False},
         async_processing=True,
@@ -302,7 +302,6 @@ with col_list:
         if not st.session_state.att_students:
             st.markdown('<div style="text-align:center; color:#888; padding:20px;">Chưa có sinh viên nào điểm danh</div>', unsafe_allow_html=True)
         else:
-            # Hiển thị danh sách (Mới nhất lên đầu)
             for s in st.session_state.att_students:
                 st.markdown(f"""
                 <div class="att-card">
@@ -335,19 +334,18 @@ with col_list:
                 </div>
                 """, unsafe_allow_html=True)
 
-# ===== XỬ LÝ DỮ LIỆU TỪ CAMERA GỬI VỀ UI =====
-# Kiểm tra Queue xem có dữ liệu mới từ luồng Camera không
+# ===== XỬ LÝ QUEUE (Cập nhật UI Realtime) =====
 if not result_queue.empty():
     new_data_found = False
     while not result_queue.empty():
         new_student = result_queue.get()
-        # Kiểm tra xem đã có trong list hiển thị chưa để tránh duplicate visual
+        # Check duplicate visual
         is_exist = any(s['StudentID'] == new_student['StudentID'] for s in st.session_state.att_students)
         if not is_exist:
             st.session_state.att_students.insert(0, new_student)
             new_data_found = True
             st.toast(f"✅ Đã điểm danh: {new_student['FullName']}", icon="🎉")
     
-    # Nếu có dữ liệu mới -> Rerun để cập nhật giao diện ngay lập tức
     if new_data_found:
+        time.sleep(0.5)
         st.rerun()
