@@ -66,62 +66,76 @@ total_students = len(students)
 col_charts, col_list = st.columns([1.8, 1.2], gap="large")
 
 # ==================================================================
-# CỘT TRÁI: BIỂU ĐỒ
+# CỘT TRÁI: BIỂU ĐỒ (Đã tối ưu trục Thời gian)
 # ==================================================================
+
 with col_charts:
     st.markdown('<h3 style="color:#0a2540; font-size:20px; font-weight:700; margin-bottom:15px;">Sơ đồ chuyên cần của lớp</h3>', unsafe_allow_html=True)
 
-    def parse_date(d_str):
-        if not d_str: return datetime.now()
-        if isinstance(d_str, datetime): return d_str
-        try: return pd.to_datetime(d_str)
-        except: return datetime.now()
-
-    start_date = parse_date(selected_class.get("StartDate"))
-    end_date = parse_date(selected_class.get("EndDate"))
-    
-    chart_data = []
-    chart_data.append({
-        "Label": f"Bắt đầu\n({start_date.strftime('%d/%m')})",
-        "Value": 0, "Order": start_date.timestamp() - 1000, "Color": "#e5e7eb"
-    })
-
+    # 1. Chuẩn bị dữ liệu
+    data_clean = []
     if attendance_hist:
         for item in attendance_hist:
             d_obj = pd.to_datetime(item["date"])
-            chart_data.append({
-                "Label": d_obj.strftime("%d/%m"),
+            data_clean.append({
+                "Date": d_obj,            # Dùng để sắp xếp
+                "Label": d_obj.strftime("%d/%m"), # Dùng để hiển thị
                 "Value": item["present"],
-                "Order": d_obj.timestamp(),
                 "Color": "#3b82f6"
             })
     
-    chart_data.append({
-        "Label": f"Kết thúc\n({end_date.strftime('%d/%m')})",
-        "Value": 0, "Order": end_date.timestamp() + 1000, "Color": "#e5e7eb"
-    })
+    # Tạo DataFrame
+    df_chart = pd.DataFrame(data_clean)
+    
+    # Nếu chưa có dữ liệu, tạo dòng giả để không lỗi biểu đồ
+    if df_chart.empty:
+        df_chart = pd.DataFrame([{
+            "Date": datetime.now(), 
+            "Label": "Chưa có", 
+            "Value": 0, 
+            "Color": "#ffffff"
+        }])
 
-    df_chart = pd.DataFrame(chart_data)
     y_max = total_students if total_students > 0 else 60
     
+    # 2. Vẽ biểu đồ dạng Ordinal (Rời rạc) nhưng Sắp xếp theo ngày
     base = alt.Chart(df_chart).encode(
-        x=alt.X('Label', sort=alt.EncodingSortField(field="Order", order="ascending"), axis=alt.Axis(title=None, labelAngle=0, grid=False)),
-        y=alt.Y('Value', scale=alt.Scale(domain=[0, y_max * 1.1]), axis=alt.Axis(title=None, grid=True))
+        # QUAN TRỌNG: sort=... giúp ngày tháng luôn đúng thứ tự dù là dạng chữ
+        x=alt.X('Label', 
+                sort=alt.EncodingSortField(field="Date", order="ascending"), 
+                axis=alt.Axis(title=None, labelAngle=0, grid=False)
+        ),
+        y=alt.Y('Value', 
+                scale=alt.Scale(domain=[0, y_max * 1.2]), 
+                axis=alt.Axis(title=None, grid=True, tickMinStep=1)
+        )
     )
 
-    bars = base.mark_bar(width=40, cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
+    # Vẽ cột: Vì là dạng rời, ta có thể để độ rộng cột lớn cho đẹp
+    bars = base.mark_bar(width=45, cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
         color=alt.Color('Color', scale=None),
-        tooltip=['Label', 'Value']
+        tooltip=[alt.Tooltip('Label', title='Ngày'), alt.Tooltip('Value', title='Hiện diện')]
     )
     
-    df_chart["TextValue"] = df_chart["Value"].apply(lambda v: str(v) if v > 0 else "")
-    text = base.mark_text(align='center', baseline='bottom', dy=-5, color="#3b82f6", fontWeight="bold").encode(text='TextValue')
+    # Số trên đầu cột
+    text = base.mark_text(align='center', baseline='bottom', dy=-5, fontWeight="bold", color="#3b82f6").encode(
+        text=alt.Text('Value', format='d')
+    ).transform_filter(
+        alt.datum.Value > 0
+    )
 
+    # Hiển thị
     st.altair_chart((bars + text).properties(height=320).configure_view(strokeOpacity=0), use_container_width=True)
-    if not attendance_hist: st.caption("ℹ️ Hiện tại chưa có dữ liệu điểm danh.")
-
+    
+    # Chú thích ngày bắt đầu/kết thúc ở dưới cùng cho gọn
+    try:
+        s_date = pd.to_datetime(selected_class.get("DateStart") or selected_class.get("StartDate")).strftime('%d/%m/%Y')
+        e_date = pd.to_datetime(selected_class.get("DateEnd") or selected_class.get("EndDate")).strftime('%d/%m/%Y')
+        st.caption(f"📅 Thời gian môn học: {s_date} ➝ {e_date}")
+    except:
+        pass
 # ==================================================================
-# CỘT PHẢI: DANH SÁCH & EXPORT EXCEL
+# CỘT PHẢI: DANH SÁCH & EXPORT EXCEL (GIỮ NGUYÊN)
 # ==================================================================
 with col_list:
     # --- PHẦN DANH SÁCH SINH VIÊN ---
@@ -166,10 +180,7 @@ with col_list:
 
     st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
 
-    # --- NÚT EXPORT EXCEL ---
-    # Logic: Bấm nút để lấy dữ liệu -> Convert sang Excel -> Hiện nút Download
-    
-    # 1. Hàm convert DataFrame sang Excel Bytes
+    # --- NÚT EXPORT EXCEL & THÊM SINH VIÊN ---
     def to_excel(df):
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
@@ -177,17 +188,12 @@ with col_list:
         processed_data = output.getvalue()
         return processed_data
 
-    # 2. Giao diện nút
     col_export, col_add = st.columns([1, 1])
     
     with col_export:
-        # Sử dụng popover (menu nhỏ) hoặc xử lý trực tiếp
-        # Ở đây mình xử lý trực tiếp: Gọi API lấy dữ liệu thô
         export_raw = get_export_data(class_id)
-        
         if export_raw:
             df_export = pd.DataFrame(export_raw)
-            # Sắp xếp cho đẹp: Ngày -> Tên
             if not df_export.empty:
                 excel_data = to_excel(df_export)
                 file_name = f"DiemDanh_{selected_class.get('ClassName')}_{datetime.now().strftime('%d%m%Y')}.xlsx"

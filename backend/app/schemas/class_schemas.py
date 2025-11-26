@@ -55,7 +55,7 @@ class ClassOut(BaseModel):
     DateEnd: date
     Session: str | None = None
     CourseCode: int | None = None
-
+    ShiftID: int | None = None   # <-- Thêm dòng này
     model_config = ConfigDict(from_attributes=True)
 
 class ManualAttendanceRequest(BaseModel):

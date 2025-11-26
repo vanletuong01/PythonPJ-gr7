@@ -44,6 +44,8 @@ types = get_types() or []
 shifts = get_shifts() or []
 class_list = get_classes_by_teacher(id_login) or []
 
+
+
 major_dict = {m['MajorID']: m['MajorName'] for m in majors}
 type_dict = {t['TypeID']: t['TypeName'] for t in types}
 shift_dict = {s['ShiftID']: s['ShiftName'] for s in shifts}

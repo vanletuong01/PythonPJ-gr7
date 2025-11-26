@@ -1,148 +1,195 @@
 import os
+import sys
+import cv2
+import random
 import numpy as np
-from PIL import Image
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-import torch
-from facenet_pytorch import MTCNN
-from backend.app.ai.face.fake_detector import FakeDetector
-from backend.app.ai.student_embedding import load_all_embeddings
+import pymysql
+import pickle
+from pathlib import Path
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-mtcnn = MTCNN(keep_all=True, device=device)
-print(f"✅ Manual MTCNN khởi tạo trên {device}")
+# --- CẤU HÌNH ĐƯỜNG DẪN ---
+# File này nằm ở: backend/app/ai/face/training/test_faces.py
+current_file = Path(__file__).resolve()
+project_root = current_file.parents[4]  # D:\PYTHONPJ
+sys.path.insert(0, str(project_root))
+
+# Import class Embedder xịn (có Alignment)
+try:
+    from backend.app.ai.face.arcface_embedder import ArcfaceEmbedder
+except ImportError:
+    print("❌ Lỗi: Không tìm thấy 'backend.app.ai.face.arcface_embedder'")
+    print("👉 Hãy kiểm tra lại đường dẫn file hoặc sys.path")
+    sys.exit(1)
+
+DATA_DIR = os.path.join(project_root, "backend", "app", "data", "face")
 
 # ===============================
-# 1️⃣ KIỂM TRA REAL / FAKE CHO ẢNH ĐIỂM DANH
+# 1. HÀM LẤY VECTOR TỪ DB (TẬP CHUẨN)
 # ===============================
-def check_real_fake_for_all():
-    ATTENDANCE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data', 'attendance'))
-    print("🔍 Đang kiểm tra real/fake các ảnh đã điểm danh...\n")
+def load_db_embeddings():
+    print("📡 Đang tải vector mẫu từ Database...")
+    try:
+        conn = pymysql.connect(
+            host="localhost", 
+            user="root", 
+            password="",   # <--- NHẬP PASSWORD DB NẾU CÓ
+            database="python_project"
+        )
+        cursor = conn.cursor()
+        
+        # Lấy StudentCode và EmbeddingBlob
+        sql = """
+            SELECT s.StudentCode, e.Embedding 
+            FROM student s
+            JOIN student_embeddings e ON s.StudentID = e.StudentID
+        """
+        cursor.execute(sql)
+        rows = cursor.fetchall()
+        
+        db_data = {}
+        for mssv, blob in rows:
+            if blob:
+                # Giải mã binary thành numpy array
+                emb = pickle.loads(blob)
+                db_data[mssv] = emb
+        
+        conn.close()
+        print(f"✅ Đã tải {len(db_data)} vector sinh viên từ DB.")
+        return db_data
+    except Exception as e:
+        print(f"❌ Lỗi kết nối DB: {e}")
+        return {}
 
-    if not os.path.exists(ATTENDANCE_DIR):
-        print(f"❌ Không tìm thấy thư mục: {ATTENDANCE_DIR}")
+# ===============================
+# 2. HÀM TEST ĐỘ CHÍNH XÁC (20% ẢNH GỐC)
+# ===============================
+def test_accuracy_with_raw_images(test_ratio=0.2):
+    # 1. Tải mốc chuẩn
+    db_embeddings = load_db_embeddings()
+    if not db_embeddings:
+        print("⚠️ Database rỗng hoặc không kết nối được.")
         return
 
-    for folder in sorted(os.listdir(ATTENDANCE_DIR)):
-        folder_path = os.path.join(ATTENDANCE_DIR, folder)
-        if not os.path.isdir(folder_path):
+    # 2. Khởi tạo Embedder
+    try:
+        embedder = ArcfaceEmbedder()
+    except Exception as e:
+        print(f"❌ Lỗi khởi tạo Model: {e}")
+        return
+    
+    print(f"\n🚀 Bắt đầu test trên {test_ratio*100}% dữ liệu ảnh gốc...")
+    
+    y_true = [] # Nhãn thực tế (MSSV của folder)
+    y_pred = [] # Nhãn dự đoán (MSSV tìm thấy trong DB)
+    scores = [] # Độ tương đồng
+    
+    folders = sorted(os.listdir(DATA_DIR))
+    
+    total_images_tested = 0
+    
+    for mssv_folder in folders:
+        folder_path = os.path.join(DATA_DIR, mssv_folder)
+        if not os.path.isdir(folder_path): continue
+        
+        # Nếu MSSV này không có trong DB thì bỏ qua (không thể test so sánh)
+        if mssv_folder not in db_embeddings:
             continue
-
-        print(f"👤 {folder}:")
-        for f in sorted(os.listdir(folder_path)):
-            if not f.lower().endswith((".jpg", ".jpeg", ".png")):
-                continue
-
-            img_path = os.path.join(folder_path, f)
+            
+        # Lấy danh sách ảnh (Thêm đuôi jpeg cho chắc chắn)
+        images = [f for f in os.listdir(folder_path) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
+        
+        # --- SỬA LỖI QUAN TRỌNG: CHECK RỖNG ---
+        if not images:
+            print(f"⚠️ Cảnh báo: Thư mục {mssv_folder} không có ảnh nào. Bỏ qua.")
+            continue
+        
+        # --- LẤY NGẪU NHIÊN 20% SỐ ẢNH ---
+        # Tính toán số lượng cần lấy
+        calc_size = int(len(images) * test_ratio)
+        
+        # Logic an toàn: Lấy ít nhất 1 ảnh, nhưng KHÔNG ĐƯỢC LỚN HƠN tổng số ảnh đang có
+        sample_size = max(1, calc_size)       # Ít nhất là 1
+        sample_size = min(sample_size, len(images)) # Không vượt quá tổng số
+        
+        test_images = random.sample(images, sample_size)
+        
+        for img_name in test_images:
+            img_path = os.path.join(folder_path, img_name)
+            img = cv2.imread(img_path)
+            if img is None: continue
+            
+            # Tính vector của ảnh test (Có Align)
             try:
-                img = Image.open(img_path).convert("RGB")
+                test_emb = embedder.embed_image(img)
+                if test_emb is None:
+                    continue
+                
+                # So sánh với TOÀN BỘ DB để tìm người giống nhất
+                # (Mô phỏng thực tế điểm danh)
+                best_score = -1
+                best_match = "Unknown"
+                
+                # Duyệt qua tất cả vector trong DB để tìm người giống nhất
+                for db_mssv, db_emb in db_embeddings.items():
+                    # Tính cosine similarity
+                    score = np.dot(test_emb, db_emb)
+                    if score > best_score:
+                        best_score = score
+                        best_match = db_mssv
+                
+                y_true.append(mssv_folder)
+                y_pred.append(best_match)
+                scores.append(best_score)
+                total_images_tested += 1
+                
             except Exception as e:
-                print(f"  ⚠️ Lỗi mở ảnh {f}: {e}")
-                continue
+                print(f"Lỗi khi xử lý ảnh {img_name}: {e}")
+                pass
 
-            # ✅ Phát hiện khuôn mặt bằng manual MTCNN
-            boxes, _ = mtcnn.detect(img)
-            face_detected = boxes is not None and len(boxes) > 0
-
-            # Giả lập các hàm này nếu chưa có
-            tscore = 1.0  # hoặc: texture_score(img)
-            has_border = False  # hoặc: detect_border_smart(img_path)
-
-            # ✅ Nếu không thấy khuôn mặt → xem là FAKE
-            if not face_detected:
-                status = "FAKE ⚠️"
-                reasons = ["không phát hiện khuôn mặt"]
-            else:
-                status = "FAKE ⚠️" if (tscore < 0.4 or has_border) else "REAL ✅"
-                reasons = []
-                if tscore < 0.4:
-                    reasons.append("mịn/thiếu chi tiết")
-                if has_border:
-                    reasons.append("viền điện thoại/màn hình")
-
-            reason_text = " + ".join(reasons) if reasons else "bình thường"
-            print(f"  - {f}: {status} | {reason_text} (score={tscore:.2f})")
-
-    print("\n✅ Hoàn tất kiểm tra real/fake.\n")
-
-
-# ===============================
-# 2️⃣ KIỂM TRA ĐỘ CHÍNH XÁC MÔ HÌNH NHẬN DIỆN
-# ===============================
-def test_face_recognition_accuracy():
-    print("📂 Đang tải embedding từ DB...")
-    embeddings = load_all_embeddings()
-    print("DEBUG: Keys:", embeddings.keys())
-    print("DEBUG: Meta mẫu:", embeddings["meta"][0])
-
-    encodings = np.array(embeddings["encodings"])
-
-    # 🔥 SỬA LẠI Ở ĐÂY — dùng đúng key meta
-    names = np.array([m['id'] for m in embeddings["meta"]])
-
-    unique_people = np.unique(names)
-    if len(unique_people) < 2:
-        print("⚠️ Dữ liệu quá ít để test accuracy.")
+    # ===============================
+    # 3. TÍNH TOÁN KẾT QUẢ
+    # ===============================
+    if total_images_tested == 0:
+        print("⚠️ Không kiểm tra được ảnh nào (Folder rỗng hoặc lỗi).")
         return
 
-    # Chia train/test theo từng người
-    np.random.shuffle(unique_people)
-    split = int(0.8 * len(unique_people))
-    train_people = unique_people[:split]
-    test_people = unique_people[split:]
-
-    train_mask = np.isin(names, train_people)
-    test_mask = np.isin(names, test_people)
-
-    train_enc = encodings[train_mask]
-    train_names = names[train_mask]
-    test_enc = encodings[test_mask]
-    test_names = names[test_mask]
-
-    thresholds = np.arange(0.70, 0.91, 0.02)
-    best_acc, best_thr = 0, 0.8
-    y_true, y_pred = [], []
-
-    for thr in thresholds:
-        preds = []
-        for enc, true_name in zip(test_enc, test_names):
-            sims = cosine_similarity([enc], train_enc)[0]
-            best_idx = np.argmax(sims)
-            pred = train_names[best_idx] if sims[best_idx] > thr else "Unknown"
-            preds.append(pred)
-
-        acc = np.mean(preds == test_names)
-        if acc > best_acc:
-            best_acc, best_thr = acc, thr
-            y_pred = preds
-            y_true = test_names
-
-    print(f"\n🎯 Threshold tối ưu: {best_thr:.2f}")
-    print(f"📊 Accuracy: {best_acc * 100:.2f}%")
-
-    # Precision / Recall / F1 (bỏ Unknown)
-    mask = np.array(y_pred) != "Unknown"
-    if np.any(mask):
-        prec = precision_score(y_true[mask], np.array(y_pred)[mask], average='weighted')
-        rec = recall_score(y_true[mask], np.array(y_pred)[mask], average='weighted')
-        f1 = f1_score(y_true[mask], np.array(y_pred)[mask], average='weighted')
-
-        print(f"Precision: {prec:.2f}")
-        print(f"Recall: {rec:.2f}")
-        print(f"F1-score: {f1:.2f}")
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
+    scores = np.array(scores)
+    
+    # Tính Accuracy với các ngưỡng (Threshold) khác nhau
+    print("\n📊 KẾT QUẢ ĐÁNH GIÁ:")
+    print(f"∑ Tổng số ảnh đã test: {total_images_tested}")
+    print("-" * 40)
+    print(f"{'THRESHOLD':<10} | {'ACCURACY':<10} | {'FALSE REJECT':<12}")
+    print("-" * 40)
+    
+    for threshold in [0.4, 0.5, 0.6, 0.7, 0.8]:
+        # Logic nhận diện:
+        # Nếu Score > Threshold VÀ Pred == True -> Đúng (True Positive)
+        # Nếu Score < Threshold -> Unknown (Coi như sai nếu đang test nhận diện chính chủ)
+        
+        # Đếm số lần nhận đúng người VÀ vượt qua ngưỡng
+        correct_predictions = ((y_pred == y_true) & (scores >= threshold)).sum()
+        accuracy = (correct_predictions / total_images_tested) * 100
+        
+        # Tỉ lệ từ chối sai (Là người thật nhưng score thấp hơn ngưỡng)
+        false_reject_count = ((y_pred == y_true) & (scores < threshold)).sum()
+        frr = (false_reject_count / total_images_tested) * 100
+        
+        print(f"{threshold:<10} | {accuracy:6.2f}%   | {frr:6.2f}%")
+    
+    print("-" * 40)
+    
+    # Gợi ý ngưỡng tốt nhất
+    # Chỉ tính trung bình score của những trường hợp ĐÚNG NGƯỜI (True Positive)
+    correct_cases = scores[y_pred == y_true]
+    if len(correct_cases) > 0:
+        avg_score_correct = np.mean(correct_cases)
+        print(f"💡 Điểm tương đồng trung bình (Mean Similarity) của đúng người: {avg_score_correct:.3f}")
+        print(f"👉 Nên đặt ngưỡng (Threshold) khoảng: {avg_score_correct - 0.1:.2f} - {avg_score_correct - 0.05:.2f}")
     else:
-        print("⚠️ Không có prediction khác Unknown!")
+        print("⚠️ Không có trường hợp nào nhận diện đúng, cần kiểm tra lại dữ liệu.")
 
-# ===============================
-# 3️⃣ MAIN
-# ===============================
 if __name__ == "__main__":
-    print("==============================")
-    print("🧠 PHÂN TÍCH ẢNH REAL / FAKE (Manual MTCNN)")
-    print("==============================")
-    check_real_fake_for_all()
-
-    print("==============================")
-    print("🎯 KIỂM TRA ĐỘ CHÍNH XÁC MÔ HÌNH (Manual MTCNN)")
-    print("==============================")
-    test_face_recognition_accuracy()
+    test_accuracy_with_raw_images(test_ratio=0.2) # Test 20%

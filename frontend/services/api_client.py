@@ -2,10 +2,17 @@ import os
 import requests
 
 # ===== CẤU HÌNH API =====
-# Render free tier thường khởi động chậm, tăng timeout lên 60s
 
-API_URL = "http://127.0.0.1:8000/api/v1" 
+# 1. Cấu hình mặc định là Localhost (để chạy trên máy tính của bạn)
+DEFAULT_API_URL = "http://127.0.0.1:8000/api/v1"
+
+# 2. Lấy URL từ biến môi trường (nếu có), nếu không thì dùng Localhost
+# Cách này giúp bạn deploy lên mạng dễ dàng mà không cần sửa code.
+API_URL = os.getenv("API_URL", DEFAULT_API_URL)
+
 TIMEOUT = int(os.getenv("API_TIMEOUT", "20"))
+
+print(f"🔌 Đang kết nối API tới: {API_URL}") # In ra để kiểm tra đang chạy server nào
 
 def _safe_json(resp):
     try:
@@ -276,14 +283,15 @@ def remove_student_from_class(class_id, student_id):
         print(f"❌ [API ERROR] remove_student_from_class: {e}")
         return False
 
-def update_class(class_id, major_id, type_id, year, class_name):
+def update_class(class_id, major_id, type_id, year, class_name, shift_id):
     url = f"{API_URL}/class/update"
     data = {
         "ClassID": class_id,
         "MajorID": major_id,
         "TypeID": type_id,
         "DateStart": f"{year}-01-01",
-        "ClassName": class_name
+        "ClassName": class_name,
+        "ShiftID": shift_id
     }
     try:
         resp = requests.post(url, json=data, timeout=TIMEOUT)
