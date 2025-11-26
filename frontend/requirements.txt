@@ -1,0 +1,26 @@
+# Streamlit Framework
+streamlit==1.51.0
+
+# API Communication
+requests==2.32.5
+
+# Data & Visualization
+pandas==2.3.3
+altair==5.5.0
+plotly==6.5.0
+
+# Image Processing (headless - QUAN TRỌNG)
+opencv-python-headless==4.10.0.84
+pillow==11.3.0
+numpy==2.2.6
+
+# Webcam component
+streamlit-webrtc==0.64.0
+av==16.0.1
+
+# Database (nếu frontend truy cập trực tiếp)
+pymysql==1.1.2
+python-dotenv==1.2.1
+
+# Utilities
+pydantic==2.12.4
