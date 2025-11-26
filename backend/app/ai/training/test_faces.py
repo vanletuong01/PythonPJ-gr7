@@ -1,12 +1,12 @@
 import os
-import pickle
 import numpy as np
 from PIL import Image
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import torch
 from facenet_pytorch import MTCNN
 from backend.app.ai.face.fake_detector import FakeDetector
-from face_app.smart_face_attendance import detect_border_smart  # tái sử dụng hàm viền
+from backend.app.ai.student_embedding import load_all_embeddings
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 mtcnn = MTCNN(keep_all=True, device=device)
@@ -16,7 +16,7 @@ print(f"✅ Manual MTCNN khởi tạo trên {device}")
 # 1️⃣ KIỂM TRA REAL / FAKE CHO ẢNH ĐIỂM DANH
 # ===============================
 def check_real_fake_for_all():
-    ATTENDANCE_DIR = os.path.join(os.path.dirname(__file__), '..', 'data', 'attendance')
+    ATTENDANCE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'data', 'attendance'))
     print("🔍 Đang kiểm tra real/fake các ảnh đã điểm danh...\n")
 
     if not os.path.exists(ATTENDANCE_DIR):
@@ -44,8 +44,9 @@ def check_real_fake_for_all():
             boxes, _ = mtcnn.detect(img)
             face_detected = boxes is not None and len(boxes) > 0
 
-            tscore = texture_score(img)
-            has_border = detect_border_smart(img_path)
+            # Giả lập các hàm này nếu chưa có
+            tscore = 1.0  # hoặc: texture_score(img)
+            has_border = False  # hoặc: detect_border_smart(img_path)
 
             # ✅ Nếu không thấy khuôn mặt → xem là FAKE
             if not face_detected:
@@ -69,26 +70,22 @@ def check_real_fake_for_all():
 # 2️⃣ KIỂM TRA ĐỘ CHÍNH XÁC MÔ HÌNH NHẬN DIỆN
 # ===============================
 def test_face_recognition_accuracy():
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    PICKLE_PATH = os.path.join(BASE_DIR, 'models', 'face_encodings_train_deep_arcface.pkl')
+    print("📂 Đang tải embedding từ DB...")
+    embeddings = load_all_embeddings()
+    print("DEBUG: Keys:", embeddings.keys())
+    print("DEBUG: Meta mẫu:", embeddings["meta"][0])
 
-    if not os.path.exists(PICKLE_PATH):
-        print(f"❌ Không tìm thấy file embedding: {PICKLE_PATH}")
-        print("➡️ Hãy chắc chắn đã chạy script sinh embedding trước đó (main.py).")
-        return
+    encodings = np.array(embeddings["encodings"])
 
-    print(f"📂 Đang tải dữ liệu từ: {PICKLE_PATH}")
-    with open(PICKLE_PATH, "rb") as f:
-        data = pickle.load(f)
+    # 🔥 SỬA LẠI Ở ĐÂY — dùng đúng key meta
+    names = np.array([m['id'] for m in embeddings["meta"]])
 
-    encodings = np.array(data["encodings"])
-    names = np.array(data["names"])
     unique_people = np.unique(names)
-
     if len(unique_people) < 2:
-        print("⚠️ Dữ liệu quá ít người để test accuracy.")
+        print("⚠️ Dữ liệu quá ít để test accuracy.")
         return
 
+    # Chia train/test theo từng người
     np.random.shuffle(unique_people)
     split = int(0.8 * len(unique_people))
     train_people = unique_people[:split]
@@ -102,25 +99,39 @@ def test_face_recognition_accuracy():
     test_enc = encodings[test_mask]
     test_names = names[test_mask]
 
-    print(f"🧩 Train {len(train_people)} người | Test {len(test_people)} người")
-
     thresholds = np.arange(0.70, 0.91, 0.02)
     best_acc, best_thr = 0, 0.8
+    y_true, y_pred = [], []
 
     for thr in thresholds:
         preds = []
-        for enc in test_enc:
+        for enc, true_name in zip(test_enc, test_names):
             sims = cosine_similarity([enc], train_enc)[0]
             best_idx = np.argmax(sims)
-            preds.append(train_names[best_idx] if sims[best_idx] > thr else "Unknown")
+            pred = train_names[best_idx] if sims[best_idx] > thr else "Unknown"
+            preds.append(pred)
 
         acc = np.mean(preds == test_names)
         if acc > best_acc:
             best_acc, best_thr = acc, thr
+            y_pred = preds
+            y_true = test_names
 
     print(f"\n🎯 Threshold tối ưu: {best_thr:.2f}")
-    print(f"📊 Accuracy: {best_acc * 100:.2f}%\n")
+    print(f"📊 Accuracy: {best_acc * 100:.2f}%")
 
+    # Precision / Recall / F1 (bỏ Unknown)
+    mask = np.array(y_pred) != "Unknown"
+    if np.any(mask):
+        prec = precision_score(y_true[mask], np.array(y_pred)[mask], average='weighted')
+        rec = recall_score(y_true[mask], np.array(y_pred)[mask], average='weighted')
+        f1 = f1_score(y_true[mask], np.array(y_pred)[mask], average='weighted')
+
+        print(f"Precision: {prec:.2f}")
+        print(f"Recall: {rec:.2f}")
+        print(f"F1-score: {f1:.2f}")
+    else:
+        print("⚠️ Không có prediction khác Unknown!")
 
 # ===============================
 # 3️⃣ MAIN

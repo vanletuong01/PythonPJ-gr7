@@ -1,7 +1,7 @@
 import time
 from sqlalchemy.orm import Session
 from backend.app.models.login import Login
-from backend.app.schemas.login import LoginCreate, LoginIn
+from backend.app.schemas.login_schemas import LoginCreate, LoginIn
 from backend.app.services.auth_service import hash_password, verify_password
 
 def get_login_by_email(db: Session, email: str):

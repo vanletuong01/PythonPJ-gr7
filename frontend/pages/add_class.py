@@ -1,6 +1,7 @@
 import streamlit as st
 from pathlib import Path
 import sys
+from datetime import datetime, timedelta
 # Import sidebar chuẩn như join_class.py
 from components.sidebar_auth import render_auth_sidebar 
 from services.api_client import get_majors, get_types, get_shifts, create_class
@@ -86,10 +87,17 @@ with st.container():
     
     col_start, col_end, col_weekday = st.columns([2,2,1])
     with col_start:
-        date_start = st.date_input("Start: *")
+        # Chỉ cho chọn ngày bắt đầu từ hôm nay trở đi
+        today = datetime.today().date()
+        date_start = st.date_input("Ngày bắt đầu *", min_value=today, value=today)
+
     with col_end:
-        date_end = st.date_input("End: *")
+        # Ngày kết thúc tự động: ngày bắt đầu + 12 tuần
+        date_end = date_start + timedelta(weeks=12)
+        st.date_input("Ngày kết thúc *", value=date_end, disabled=True)
+
     with col_weekday:
+        # Thứ học tự động theo ngày bắt đầu
         weekdays = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"]
         weekday = weekdays[date_start.weekday()]
         st.text_input("Thứ học:", weekday, disabled=True)
@@ -107,7 +115,7 @@ with st.container():
         if not course_code: errors.append("Mã học phần thiếu")
         if not teacher.strip(): errors.append("Tên giảng viên thiếu")
         if not subject.strip(): errors.append("Tên môn học thiếu")
-        if date_end < date_start: errors.append("Ngày kết thúc phải sau ngày bắt đầu")
+        if date_start < today: errors.append("Không được chọn ngày bắt đầu trong quá khứ")
         
         if errors:
             for err in errors: st.error(err)

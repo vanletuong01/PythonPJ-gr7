@@ -107,6 +107,11 @@ def render_dashboard_sidebar():
         if st.button("✅ Điểm danh", use_container_width=True):
             st.switch_page("pages/select_session.py")
         
+        if st.button("❌ Thoát lớp ", use_container_width=True):
+            st.switch_page("pages/join_class.py")
+       
+
+
         # --- LOGOUT ---
         if st.button("🚪 Đăng xuất", use_container_width=True):
             st.session_state.clear()

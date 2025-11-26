@@ -61,6 +61,13 @@ session_date_display = selected_session['date']  # "17/11/2025"
 session_date_obj = selected_session['date_raw']
 session_date_api = session_date_obj.strftime("%Y-%m-%d")
 
+today = datetime.now().date()
+session_date = session_date_obj.date()  # hoặc: datetime.strptime(SESSION_DATE_STR, "%Y-%m-%d").date()
+
+if today != session_date:
+    st.error("Chỉ được điểm danh trong đúng ngày học!")
+    st.stop()
+
 st.info(f"📅 **Buổi {session_number}** - {session_date_display}")
 
 # ===== GỌI API LẤY DỮ LIỆU =====
@@ -99,25 +106,35 @@ with tab1:
         st.markdown(f"**Tổng: {len(attended_list)} sinh viên**")
         
         for idx, student in enumerate(attended_list, start=1):
-            time_str = student.get("AttendanceTime", "--:--:--")
+            time_str = student.get("AttendanceTime") # Có thể là None hoặc chuỗi giờ
             
-            # Kiểm tra đi trễ (giả sử tiết học bắt đầu 07:30:00)
-            late_mark = ""
-            if time_str and time_str != "--:--:--":
+            # Logic hiển thị trạng thái
+            status_html = ""
+            
+            if time_str:
+                # Có thời gian -> Điểm danh bằng khuôn mặt
+                display_time = f"⏰ {time_str}"
+                
+                # Kiểm tra trễ (Giả sử 07:30:00 vào học)
                 try:
                     att_time = datetime.strptime(time_str, "%H:%M:%S").time()
                     class_start = datetime.strptime("07:30:00", "%H:%M:%S").time()
                     if att_time > class_start:
-                        late_mark = "🔴 Trễ"
+                        status_html = "<span style='color:#ef4444; font-weight:bold; margin-left:10px;'>🔴 Trễ</span>"
                 except:
                     pass
-            
+            else:
+                # Không có thời gian -> Điểm danh thủ công
+                display_time = "🖐️ Điểm danh thủ công"
+                status_html = "<span style='color:#f59e0b; font-weight:bold; margin-left:10px;'>⚠️ Admin check</span>"
+
             st.markdown(f"""
             <div style='background:#f0fdf4; border-left:4px solid #22c55e; padding:10px; margin-bottom:8px; border-radius:5px;'>
                 <b>{idx}. {student['FullName']}</b> - {student['StudentCode']}<br>
-                ⏰ Giờ điểm danh: <b>{time_str}</b> {late_mark}
+                {display_time} {status_html}
             </div>
             """, unsafe_allow_html=True)
+
 
 with tab2:
     if len(absent_list) == 0:
@@ -125,51 +142,30 @@ with tab2:
     else:
         st.markdown(f"**Tổng: {len(absent_list)} sinh viên vắng**")
         
-        # Khởi tạo state để lưu SV được chọn
-        if "manual_checkin_students" not in st.session_state:
-            st.session_state.manual_checkin_students = set()
-        
+        # Duyệt qua danh sách sinh viên vắng
         for idx, student in enumerate(absent_list, start=1):
+            # Chia layout: 4 phần thông tin, 1 phần nút bấm
             col_info, col_action = st.columns([4, 1])
             
             with col_info:
                 st.markdown(f"""
-                <div style='background:#fef2f2; border-left:4px solid #ef4444; padding:10px; margin-bottom:8px; border-radius:5px;'>
-                    <b>{idx}. {student['FullName']}</b> - {student['StudentCode']}
+                <div style='background:#fef2f2; border-left:4px solid #ef4444; padding:10px; margin-bottom:8px; border-radius:5px; display: flex; align-items: center; height: 100%;'>
+                    <div><b>{idx}. {student['FullName']}</b> - {student['StudentCode']}</div>
                 </div>
                 """, unsafe_allow_html=True)
             
             with col_action:
-                # Checkbox để giáo viên chọn
-                is_checked = st.checkbox(
-                    "Điểm danh",
-                    key=f"check_{student['StudyID']}",
-                    value=student['StudyID'] in st.session_state.manual_checkin_students
-                )
-                
-                if is_checked:
-                    st.session_state.manual_checkin_students.add(student['StudyID'])
-                else:
-                    st.session_state.manual_checkin_students.discard(student['StudyID'])
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # Nút LƯU ĐIỂM DANH THỦ CÔNG
-        if len(st.session_state.manual_checkin_students) > 0:
-            if st.button(f"💾 Lưu điểm danh cho {len(st.session_state.manual_checkin_students)} sinh viên", type="primary", use_container_width=True):
-                success_count = 0
-                fail_count = 0
-                
-                for study_id in st.session_state.manual_checkin_students:
-                    result = manual_checkin(study_id, session_date_api)
-                    if result.get("success"):
-                        success_count += 1
-                    else:
-                        fail_count += 1
-                
-                if fail_count == 0:
-                    st.success(f"✅ Đã điểm danh thành công cho {success_count} sinh viên!")
-                    st.session_state.manual_checkin_students.clear()
-                    st.rerun()
-                else:
-                    st.warning(f"Thành công: {success_count}, Thất bại: {fail_count}")
+                # Dùng button thay vì checkbox
+                # Key phải là duy nhất, dùng StudyID để làm key
+                if st.button("Điểm danh", key=f"btn_checkin_{student['StudyID']}", type="primary", use_container_width=True):
+                    with st.spinner("Đang lưu..."):
+                        # 1. Gọi API điểm danh ngay lập tức
+                        result = manual_checkin(student['StudyID'], session_date_api)
+                        
+                        # 2. Kiểm tra kết quả
+                        if result.get("success"):
+                            st.toast(f"✅ Đã điểm danh: {student['FullName']}", icon="✅")
+                            # 3. Quan trọng: Rerun để tải lại trang
+                            st.rerun()
+                        else:
+                            st.error(f"Lỗi: {result.get('message')}")
